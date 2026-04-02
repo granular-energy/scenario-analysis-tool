@@ -14,7 +14,7 @@ function MonthlyBreakdownChart({ monthlyScores }: MonthlyBreakdownChartProps) {
   const options = useMemo<Highcharts.Options>(() => ({
     chart: {
       type: 'column',
-      style: { fontFamily: "'Space Grotesk', sans-serif" },
+      style: { fontFamily: "'Inter', Arial, sans-serif" },
     },
     title: {
       text: 'Monthly CFE Score',

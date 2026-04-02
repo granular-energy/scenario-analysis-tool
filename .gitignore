@@ -27,3 +27,4 @@ dist-ssr
 process/evals/
 STATUS
 EVAL.md
+.vercel

@@ -52,7 +52,7 @@ function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
     chart: {
       type: 'heatmap',
       height: 400,
-      style: { fontFamily: "'Space Grotesk', sans-serif" },
+      style: { fontFamily: "'Inter', Arial, sans-serif" },
     },
     title: {
       text: 'Hourly CFE Matching',

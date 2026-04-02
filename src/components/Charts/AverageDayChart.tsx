@@ -10,9 +10,9 @@ interface AverageDayChartProps {
 }
 
 const TECHNOLOGY_COLORS: Record<string, string> = {
-  'Wind Onshore': '#47b89e',
-  'Solar PV': '#f4a940',
-  'Hydro': '#5b9bd5',
+  'Wind Onshore': '#58CAA1',
+  'Solar PV': '#FDCF77',
+  'Hydro': '#6EA1DD',
 }
 
 function AverageDayChart({
@@ -62,7 +62,7 @@ function AverageDayChart({
 
     return {
       chart: {
-        style: { fontFamily: "'Space Grotesk', sans-serif" },
+        style: { fontFamily: "'Inter', Arial, sans-serif" },
       },
       title: {
         text: 'Average 24-Hour Profile',
