@@ -76,3 +76,8 @@
   font-size: 1.25rem;
   color: #666;
 }
+
+.monthly-breakdown-chart {
+  margin-top: 2rem;
+  width: 100%;
+}

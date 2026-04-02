@@ -5,6 +5,7 @@ import { generationProfiles } from './data/profiles/generation'
 import { calculateHourlyMatching } from './utils/matching'
 import ProfileSelector from './components/ProfileSelector/ProfileSelector'
 import MixSliders from './components/MixSliders/MixSliders'
+import MonthlyBreakdownChart from './components/Charts/MonthlyBreakdownChart'
 import './App.css'
 
 const DEFAULT_PROFILE_ID = 'uk-data-centre'
@@ -55,6 +56,7 @@ function App() {
           <span className="cfe-score-value">{Math.round(result.cfeScore)}%</span>
           <span className="cfe-score-label">CFE Score</span>
         </div>
+        <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
       </div>
     </div>
   )
