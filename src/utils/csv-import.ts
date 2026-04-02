@@ -22,10 +22,15 @@ export function parseCsvToProfile(
   const parsed = Papa.parse(csvText.trim(), {
     dynamicTyping: true,
     skipEmptyLines: true,
+    delimiter: '',  // auto-detect
   })
 
-  if (parsed.errors.length > 0) {
-    return { error: `CSV parse error: ${parsed.errors[0].message} (row ${parsed.errors[0].row})` }
+  // Filter out non-fatal PapaParse warnings (e.g. delimiter auto-detect)
+  const fatalErrors = parsed.errors.filter(
+    (e) => e.type !== 'Delimiter' && e.type !== 'FieldMismatch'
+  )
+  if (fatalErrors.length > 0) {
+    return { error: `CSV parse error: ${fatalErrors[0].message} (row ${fatalErrors[0].row})` }
   }
 
   const rows = parsed.data as unknown[][]
