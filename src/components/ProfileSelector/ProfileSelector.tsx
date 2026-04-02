@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { Profile } from '../../types'
 
 interface ProfileSelectorProps {
@@ -20,6 +21,11 @@ function ProfileSelector({
   const builtIn = profiles.filter((p) => !customProfileIds.includes(p.id))
   const custom = profiles.filter((p) => customProfileIds.includes(p.id))
   const selectedIsCustom = customProfileIds.includes(selectedProfileId)
+
+  const selectedDescription = useMemo(
+    () => profiles.find((p) => p.id === selectedProfileId)?.description ?? '',
+    [profiles, selectedProfileId]
+  )
 
   return (
     <div className="profile-selector">
@@ -56,6 +62,9 @@ function ProfileSelector({
           </button>
         )}
       </div>
+      {selectedDescription && (
+        <p className="profile-description">{selectedDescription}</p>
+      )}
       {onUploadClick && (
         <button className="upload-csv-btn" onClick={onUploadClick} type="button">
           Upload custom CSV

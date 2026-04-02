@@ -20,6 +20,7 @@ export interface TechnologyContribution {
 
 export interface MatchingResult {
   cfeScore: number
+  annualScore: number
   hourlyMatched: number[]
   monthlyScores: number[]
   hourlyMatchingPercentage: number[]

@@ -77,11 +77,12 @@ function MixSliders({
             const value = mix[tech] ?? 0
             const isCustom = customProfileIds.includes(profile.id)
             return (
-              <div key={tech} className="slider-row">
-                <label htmlFor={`slider-${tech}`}>
-                  {profile.name}
-                  {isCustom && <span className="custom-badge">custom</span>}
-                </label>
+              <div key={tech} className="slider-block">
+                <div className="slider-row">
+                  <label htmlFor={`slider-${tech}`} title={profile.description}>
+                    {profile.name}
+                    {isCustom && <span className="custom-badge">custom</span>}
+                  </label>
                 <input
                   id={`slider-${tech}`}
                   type="range"
@@ -112,6 +113,8 @@ function MixSliders({
                 >
                   &times;
                 </button>
+                </div>
+                <p className="profile-description">{profile.description}</p>
               </div>
             )
           })}

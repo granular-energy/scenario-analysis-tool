@@ -84,7 +84,8 @@
   min-width: 0;
 }
 
-.cfe-score {
+/* Score panel — annual vs hourly comparison */
+.score-panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   padding: 1rem;
@@ -92,11 +93,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.125rem;
-  flex: 0 0 180px;
+  gap: 0.5rem;
+  flex: 0 0 200px;
 }
 
-.cfe-score-value {
+.score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.0625rem;
+}
+
+.score-card-primary .score-value {
   font-family: var(--font-heading);
   font-size: 2.75rem;
   font-weight: 500;
@@ -104,9 +112,17 @@
   color: var(--color-primary);
 }
 
-.cfe-score-label {
+.score-card-secondary .score-value {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--neutral-500);
+}
+
+.score-label {
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -115,14 +131,14 @@
   text-align: center;
 }
 
-.cfe-score-description {
-  margin: 0.25rem 0 0;
+.score-description {
+  margin: 0.125rem 0 0;
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 400;
   color: var(--color-text-muted);
   text-align: center;
-  line-height: 1rem;
+  line-height: 1.3;
 }
 
 /* Profile selector — label-300 + body-200-light input style */
@@ -156,6 +172,25 @@
 .profile-selector select:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+.profile-description {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.slider-block {
+  margin-bottom: 0.5rem;
+}
+
+.slider-block .profile-description {
+  margin-top: 0.125rem;
+  padding-left: 180px;
 }
 
 /* Mix sliders — label-300 heading, body-300-light description */
@@ -647,19 +682,25 @@
     flex-direction: column;
   }
 
-  .cfe-score {
+  .score-panel {
     flex: none;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.75rem;
     padding: 0.75rem;
+    justify-content: center;
   }
 
-  .cfe-score-value {
+  .score-card-primary .score-value {
     font-size: 2rem;
   }
 
-  .cfe-score-description {
-    text-align: left;
+  .score-description {
+    text-align: center;
+  }
+
+  .slider-block .profile-description {
+    padding-left: 0;
   }
 
   .charts-row {
@@ -683,7 +724,7 @@
   }
 
   .controls-section,
-  .cfe-score,
+  .score-panel,
   .chart-block,
   .cta {
     padding: 0.75rem;

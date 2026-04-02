@@ -108,12 +108,18 @@ function App() {
               onRemoveCustom={handleRemoveCustomProfile}
             />
           </section>
-          <div className="cfe-score">
-            <span className="cfe-score-value">{Math.round(result.cfeScore)}%</span>
-            <span className="cfe-score-label">Hourly Matching Score</span>
-            <p className="cfe-score-description">
-              Weighted average percentage matching in each hour.
-              Surplus in any hour cannot cover deficits elsewhere.
+          <div className="score-panel">
+            <div className="score-card score-card-primary">
+              <span className="score-value">{Math.round(result.cfeScore)}%</span>
+              <span className="score-label">Hourly Matching</span>
+            </div>
+            <div className="score-card score-card-secondary">
+              <span className="score-value score-value-secondary">{Math.round(result.annualScore)}%</span>
+              <span className="score-label">Annual Matching</span>
+            </div>
+            <p className="score-description">
+              Annual matching counts total generation vs total consumption.
+              Hourly matching checks each hour — surplus cannot cover deficits elsewhere.
             </p>
           </div>
         </div>
