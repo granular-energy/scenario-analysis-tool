@@ -1,5 +1,4 @@
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
+import Highcharts, { HighchartsReact } from '../../highcharts'
 import { useMemo } from 'react'
 import type { TechnologyContribution } from '../../types'
 
@@ -9,9 +8,9 @@ const MONTH_LABELS = [
 ]
 
 const TECHNOLOGY_COLORS: Record<string, string> = {
-  'Wind Onshore': '#3b82f6',
-  'Solar PV': '#f59e0b',
-  'Hydro': '#06b6d4',
+  'Wind Onshore': '#47b89e',
+  'Solar PV': '#f4a940',
+  'Hydro': '#5b9bd5',
 }
 
 interface TechnologyContributionChartProps {
@@ -41,10 +40,10 @@ function TechnologyContributionChart({
   const options = useMemo<Highcharts.Options>(() => ({
     chart: {
       type: 'column',
-      style: { fontFamily: 'Inter, system-ui, sans-serif' },
+      style: { fontFamily: "'Space Grotesk', sans-serif" },
     },
     title: {
-      text: 'Technology Contribution to CFE',
+      text: 'Monthly Technology Contribution to CFE',
     },
     xAxis: {
       categories: MONTH_LABELS,

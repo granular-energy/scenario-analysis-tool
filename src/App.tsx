@@ -7,9 +7,9 @@ import Header from './components/Layout/Header'
 import CallToAction from './components/Layout/CallToAction'
 import ProfileSelector from './components/ProfileSelector/ProfileSelector'
 import MixSliders from './components/MixSliders/MixSliders'
-import MonthlyBreakdownChart from './components/Charts/MonthlyBreakdownChart'
 import HourlyHeatmap from './components/Charts/HourlyHeatmap'
 import TechnologyContributionChart from './components/Charts/TechnologyContributionChart'
+import AverageDayChart from './components/Charts/AverageDayChart'
 import './App.css'
 
 const DEFAULT_PROFILE_ID = 'uk-data-centre'
@@ -55,30 +55,67 @@ function App() {
     <div className="app">
       <Header />
       <main className="main">
-        <section className="controls-section">
-          <ProfileSelector
-            profiles={consumptionProfiles}
-            selectedProfileId={selectedProfileId}
-            onSelect={setSelectedProfileId}
-          />
-          <MixSliders
-            generationProfiles={generationProfiles}
-            mix={mix}
-            onMixChange={handleMixChange}
-          />
-        </section>
-        <section className="results-section">
+        <div className="intro">
+          <h2 className="intro-title">Estimate your hourly energy matching score</h2>
+          <p className="intro-description">
+            Select a consumption profile and adjust the generation mix to see how well
+            your energy supply matches demand on an hour-by-hour basis. Unlike annual
+            matching, hourly matching reveals how much of your consumption is truly
+            covered by carbon-free energy in each hour of the year.
+          </p>
+        </div>
+        <div className="controls-and-score">
+          <section className="controls-section">
+            <ProfileSelector
+              profiles={consumptionProfiles}
+              selectedProfileId={selectedProfileId}
+              onSelect={setSelectedProfileId}
+            />
+            <MixSliders
+              generationProfiles={generationProfiles}
+              mix={mix}
+              onMixChange={handleMixChange}
+            />
+          </section>
           <div className="cfe-score">
             <span className="cfe-score-value">{Math.round(result.cfeScore)}%</span>
-            <span className="cfe-score-label">CFE Score</span>
+            <span className="cfe-score-label">Hourly CFE Score</span>
+            <p className="cfe-score-description">
+              Percentage of consumption matched hourly by carbon-free generation.
+              Surplus in any hour cannot cover deficits elsewhere.
+            </p>
           </div>
-          <div className="charts">
-            <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
+        </div>
+        <section className="results-section">
+          <div className="charts-row">
+            <div className="chart-block chart-half">
+              <p className="chart-description">
+                Average consumption and generation shape over 24 hours.
+                Grey area shows unmatched consumption.
+              </p>
+              <AverageDayChart
+                consumptionProfile={selectedProfile}
+                generationMix={mix}
+                generationProfiles={generationProfiles}
+              />
+            </div>
+            <div className="chart-block chart-half">
+              <p className="chart-description">
+                Monthly technology contribution to matched energy.
+                A diversified mix gives better year-round coverage.
+              </p>
+              <TechnologyContributionChart
+                technologyContributions={result.technologyContributions}
+                monthlyConsumption={monthlyConsumption}
+              />
+            </div>
+          </div>
+          <div className="chart-block">
+            <p className="chart-description">
+              Every hour of the year by matching percentage. Green = fully matched,
+              red = significant gap between generation and consumption.
+            </p>
             <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
-            <TechnologyContributionChart
-              technologyContributions={result.technologyContributions}
-              monthlyConsumption={monthlyConsumption}
-            />
           </div>
         </section>
         <CallToAction />

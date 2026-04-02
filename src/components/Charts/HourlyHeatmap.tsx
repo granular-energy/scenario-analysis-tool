@@ -1,9 +1,5 @@
-import Highcharts from 'highcharts'
-import HeatmapModule from 'highcharts/modules/heatmap'
-import HighchartsReact from 'highcharts-react-official'
+import Highcharts, { HighchartsReact } from '../../highcharts'
 import { useMemo } from 'react'
-
-;(HeatmapModule as unknown as (hc: typeof Highcharts) => void)(Highcharts)
 
 const MONTH_LABELS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -56,7 +52,7 @@ function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
     chart: {
       type: 'heatmap',
       height: 400,
-      style: { fontFamily: 'Inter, system-ui, sans-serif' },
+      style: { fontFamily: "'Space Grotesk', sans-serif" },
     },
     title: {
       text: 'Hourly CFE Matching',
@@ -92,7 +88,7 @@ function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
       stops: [
         [0, '#dc2626'],
         [0.5, '#facc15'],
-        [1, '#16a34a'],
+        [1, '#00988b'],
       ],
       labels: {
         format: '{value}%',

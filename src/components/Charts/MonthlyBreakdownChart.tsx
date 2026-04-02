@@ -1,5 +1,4 @@
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
+import Highcharts, { HighchartsReact } from '../../highcharts'
 import { useMemo } from 'react'
 
 const MONTH_LABELS = [
@@ -15,7 +14,7 @@ function MonthlyBreakdownChart({ monthlyScores }: MonthlyBreakdownChartProps) {
   const options = useMemo<Highcharts.Options>(() => ({
     chart: {
       type: 'column',
-      style: { fontFamily: 'Inter, system-ui, sans-serif' },
+      style: { fontFamily: "'Space Grotesk', sans-serif" },
     },
     title: {
       text: 'Monthly CFE Score',
@@ -39,7 +38,7 @@ function MonthlyBreakdownChart({ monthlyScores }: MonthlyBreakdownChartProps) {
         type: 'column' as const,
         name: 'CFE Score',
         data: monthlyScores.map((score) => Math.round(score * 10) / 10),
-        color: '#4CAF50',
+        color: '#00988b',
       },
     ],
     legend: { enabled: false },

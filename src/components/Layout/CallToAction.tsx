@@ -8,7 +8,7 @@ function CallToAction() {
         target="_blank"
         rel="noopener noreferrer"
       >
-        Get in touch with Granular Energy
+        Learn more about Granular Energy
       </a>
     </section>
   )
