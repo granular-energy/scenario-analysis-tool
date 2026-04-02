@@ -118,8 +118,8 @@ function App() {
               <span className="score-label">Annual Matching</span>
             </div>
             <p className="score-description">
-              Annual matching counts total generation vs total consumption.
-              Hourly matching checks each hour — surplus cannot cover deficits elsewhere.
+              Weighted average percentage matching in each hour.
+              Surplus in any hour cannot cover deficits elsewhere.
             </p>
           </div>
         </div>
