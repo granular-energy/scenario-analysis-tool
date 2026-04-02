@@ -2,10 +2,12 @@ import { useState, useMemo, useCallback } from 'react'
 import type { GenerationMix } from './types'
 import { consumptionProfiles } from './data/profiles/consumption'
 import { generationProfiles } from './data/profiles/generation'
-import { calculateHourlyMatching } from './utils/matching'
+import { calculateHourlyMatching, MONTH_HOURS } from './utils/matching'
 import ProfileSelector from './components/ProfileSelector/ProfileSelector'
 import MixSliders from './components/MixSliders/MixSliders'
 import MonthlyBreakdownChart from './components/Charts/MonthlyBreakdownChart'
+import HourlyHeatmap from './components/Charts/HourlyHeatmap'
+import TechnologyContributionChart from './components/Charts/TechnologyContributionChart'
 import './App.css'
 
 const DEFAULT_PROFILE_ID = 'uk-data-centre'
@@ -30,6 +32,17 @@ function App() {
   const result = useMemo(
     () => calculateHourlyMatching(selectedProfile, mix, generationProfiles),
     [selectedProfile, mix]
+  )
+
+  const monthlyConsumption = useMemo(
+    () => MONTH_HOURS.map(({ start, end }) => {
+      let total = 0
+      for (let h = start; h < end; h++) {
+        total += selectedProfile.data[h]
+      }
+      return total
+    }),
+    [selectedProfile]
   )
 
   const handleMixChange = useCallback((technology: string, percentage: number) => {
@@ -57,6 +70,11 @@ function App() {
           <span className="cfe-score-label">CFE Score</span>
         </div>
         <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
+        <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
+        <TechnologyContributionChart
+          technologyContributions={result.technologyContributions}
+          monthlyConsumption={monthlyConsumption}
+        />
       </div>
     </div>
   )

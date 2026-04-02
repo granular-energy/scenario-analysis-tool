@@ -1,8 +1,8 @@
-import type { Profile, GenerationMix, MatchingResult } from '../types'
+import type { Profile, GenerationMix, MatchingResult, TechnologyContribution } from '../types'
 
 const HOURS_PER_YEAR = 8760
 
-const MONTH_HOURS: readonly { start: number; end: number }[] = [
+export const MONTH_HOURS: readonly { start: number; end: number }[] = [
   { start: 0, end: 744 },       // Jan (31 days)
   { start: 744, end: 1416 },    // Feb (28 days)
   { start: 1416, end: 2160 },   // Mar (31 days)
@@ -34,20 +34,26 @@ export function calculateHourlyMatching(
   const totalAnnualConsumption = consumptionProfile.data.reduce((a, b) => a + b, 0)
 
   const totalGeneration = new Array<number>(HOURS_PER_YEAR).fill(0)
+  const scaledByTech: { technology: string; name: string; scaled: number[] }[] = []
 
   for (const genProfile of generationProfiles) {
     const percentage = generationMix[genProfile.technology] ?? 0
     if (percentage === 0) continue
 
     const scaled = scaleProfile(genProfile, percentage, totalAnnualConsumption)
+    scaledByTech.push({ technology: genProfile.technology, name: genProfile.name, scaled })
     for (let h = 0; h < HOURS_PER_YEAR; h++) {
       totalGeneration[h] += scaled[h]
     }
   }
 
   const hourlyMatched = new Array<number>(HOURS_PER_YEAR)
+  const hourlyMatchingPercentage = new Array<number>(HOURS_PER_YEAR)
   for (let h = 0; h < HOURS_PER_YEAR; h++) {
     hourlyMatched[h] = Math.min(totalGeneration[h], consumptionProfile.data[h])
+    hourlyMatchingPercentage[h] = consumptionProfile.data[h] > 0
+      ? (hourlyMatched[h] / consumptionProfile.data[h]) * 100
+      : 0
   }
 
   const totalMatched = hourlyMatched.reduce((a, b) => a + b, 0)
@@ -64,5 +70,22 @@ export function calculateHourlyMatching(
     return monthConsumption > 0 ? (monthMatched / monthConsumption) * 100 : 0
   })
 
-  return { cfeScore, hourlyMatched, monthlyScores }
+  const technologyContributions: TechnologyContribution[] = scaledByTech.map(
+    ({ technology, name, scaled }) => {
+      const monthlyMatched = MONTH_HOURS.map(({ start, end }) => {
+        let techMatched = 0
+        for (let h = start; h < end; h++) {
+          const totalGen = totalGeneration[h]
+          if (totalGen > 0) {
+            const techShare = scaled[h] / totalGen
+            techMatched += hourlyMatched[h] * techShare
+          }
+        }
+        return techMatched
+      })
+      return { technology, name, monthlyMatched }
+    }
+  )
+
+  return { cfeScore, hourlyMatched, monthlyScores, hourlyMatchingPercentage, technologyContributions }
 }
