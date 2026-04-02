@@ -1,11 +1,27 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --color-primary: #863bff;
+  --color-primary-dark: #6b22e0;
+  --color-text: #1a1a2e;
+  --color-text-secondary: #555;
+  --color-bg: #f8f7fc;
+  --color-surface: #ffffff;
+  --color-border: #e2ddf0;
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  font-family: var(--font-family);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--color-text);
+  background: var(--color-bg);
 }

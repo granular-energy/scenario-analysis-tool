@@ -3,6 +3,8 @@ import type { GenerationMix } from './types'
 import { consumptionProfiles } from './data/profiles/consumption'
 import { generationProfiles } from './data/profiles/generation'
 import { calculateHourlyMatching, MONTH_HOURS } from './utils/matching'
+import Header from './components/Layout/Header'
+import CallToAction from './components/Layout/CallToAction'
 import ProfileSelector from './components/ProfileSelector/ProfileSelector'
 import MixSliders from './components/MixSliders/MixSliders'
 import MonthlyBreakdownChart from './components/Charts/MonthlyBreakdownChart'
@@ -51,31 +53,36 @@ function App() {
 
   return (
     <div className="app">
-      <h1>Scenario Analysis Tool</h1>
-      <div className="controls">
-        <ProfileSelector
-          profiles={consumptionProfiles}
-          selectedProfileId={selectedProfileId}
-          onSelect={setSelectedProfileId}
-        />
-        <MixSliders
-          generationProfiles={generationProfiles}
-          mix={mix}
-          onMixChange={handleMixChange}
-        />
-      </div>
-      <div className="results">
-        <div className="cfe-score">
-          <span className="cfe-score-value">{Math.round(result.cfeScore)}%</span>
-          <span className="cfe-score-label">CFE Score</span>
-        </div>
-        <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
-        <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
-        <TechnologyContributionChart
-          technologyContributions={result.technologyContributions}
-          monthlyConsumption={monthlyConsumption}
-        />
-      </div>
+      <Header />
+      <main className="main">
+        <section className="controls-section">
+          <ProfileSelector
+            profiles={consumptionProfiles}
+            selectedProfileId={selectedProfileId}
+            onSelect={setSelectedProfileId}
+          />
+          <MixSliders
+            generationProfiles={generationProfiles}
+            mix={mix}
+            onMixChange={handleMixChange}
+          />
+        </section>
+        <section className="results-section">
+          <div className="cfe-score">
+            <span className="cfe-score-value">{Math.round(result.cfeScore)}%</span>
+            <span className="cfe-score-label">CFE Score</span>
+          </div>
+          <div className="charts">
+            <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
+            <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
+            <TechnologyContributionChart
+              technologyContributions={result.technologyContributions}
+              monthlyConsumption={monthlyConsumption}
+            />
+          </div>
+        </section>
+        <CallToAction />
+      </main>
     </div>
   )
 }
