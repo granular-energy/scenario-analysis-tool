@@ -9,7 +9,7 @@ function Header() {
           alt="Granular Energy"
           height="24"
         />
-        <h1 className="header-title">Scenario Analysis Tool</h1>
+        <h1 className="header-title">Scenario Analysis Tool v1</h1>
       </div>
     </header>
   )
