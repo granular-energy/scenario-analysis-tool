@@ -118,8 +118,8 @@ function App() {
               <span className="score-label">Annual Matching</span>
             </div>
             <p className="score-description">
-              Weighted average percentage matching in each hour.
-              Surplus in any hour cannot cover deficits elsewhere.
+              Hourly matching score is the weighted average percentage matching
+              in each hour. Surplus in any hour cannot cover deficits in other hours.
             </p>
           </div>
         </div>
