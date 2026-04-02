@@ -5,11 +5,21 @@ interface MixSlidersProps {
   generationProfiles: Profile[]
   mix: GenerationMix
   onMixChange: (technology: string, percentage: number) => void
+  onUploadClick?: () => void
+  customProfileIds?: string[]
+  onRemoveCustom?: (id: string) => void
 }
 
 const MAX_SELECTIONS = 5
 
-function MixSliders({ generationProfiles, mix, onMixChange }: MixSlidersProps) {
+function MixSliders({
+  generationProfiles,
+  mix,
+  onMixChange,
+  onUploadClick,
+  customProfileIds = [],
+  onRemoveCustom,
+}: MixSlidersProps) {
   const [selectedTechs, setSelectedTechs] = useState<string[]>([])
 
   const availableProfiles = generationProfiles.filter(
@@ -31,8 +41,13 @@ function MixSliders({ generationProfiles, mix, onMixChange }: MixSlidersProps) {
     (tech: string) => {
       setSelectedTechs((prev) => prev.filter((t) => t !== tech))
       onMixChange(tech, 0)
+      // Also remove from custom profiles if it's custom
+      const profile = generationProfiles.find((p) => p.technology === tech)
+      if (profile && customProfileIds.includes(profile.id) && onRemoveCustom) {
+        onRemoveCustom(profile.id)
+      }
     },
-    [onMixChange]
+    [onMixChange, generationProfiles, customProfileIds, onRemoveCustom]
   )
 
   const handleInputChange = useCallback(
@@ -60,9 +75,13 @@ function MixSliders({ generationProfiles, mix, onMixChange }: MixSlidersProps) {
             const profile = generationProfiles.find((p) => p.technology === tech)
             if (!profile) return null
             const value = mix[tech] ?? 0
+            const isCustom = customProfileIds.includes(profile.id)
             return (
               <div key={tech} className="slider-row">
-                <label htmlFor={`slider-${tech}`}>{profile.name}</label>
+                <label htmlFor={`slider-${tech}`}>
+                  {profile.name}
+                  {isCustom && <span className="custom-badge">custom</span>}
+                </label>
                 <input
                   id={`slider-${tech}`}
                   type="range"
@@ -99,20 +118,27 @@ function MixSliders({ generationProfiles, mix, onMixChange }: MixSlidersProps) {
         </div>
       )}
 
-      {selectedTechs.length < MAX_SELECTIONS && availableProfiles.length > 0 && (
-        <select
-          className="add-technology-select"
-          onChange={handleAdd}
-          value=""
-        >
-          <option value="">+ Add generation technology</option>
-          {availableProfiles.map((p) => (
-            <option key={p.technology} value={p.technology}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      )}
+      <div className="mix-actions">
+        {selectedTechs.length < MAX_SELECTIONS && availableProfiles.length > 0 && (
+          <select
+            className="add-technology-select"
+            onChange={handleAdd}
+            value=""
+          >
+            <option value="">+ Add generation technology</option>
+            {availableProfiles.map((p) => (
+              <option key={p.technology} value={p.technology}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {onUploadClick && (
+          <button className="upload-csv-btn" onClick={onUploadClick} type="button">
+            Upload custom CSV
+          </button>
+        )}
+      </div>
 
       {selectedTechs.length === 0 && (
         <p className="mix-empty">Select a generation technology to get started.</p>

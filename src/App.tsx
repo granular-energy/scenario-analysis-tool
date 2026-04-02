@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback } from 'react'
-import type { GenerationMix } from './types'
-import { consumptionProfiles } from './data/profiles/consumption'
-import { generationProfiles } from './data/profiles/generation'
+import type { GenerationMix, Profile } from './types'
+import { consumptionProfiles as builtInConsumption } from './data/profiles/consumption'
+import { generationProfiles as builtInGeneration } from './data/profiles/generation'
 import { calculateHourlyMatching, MONTH_HOURS } from './utils/matching'
+import { loadCustomProfiles, saveCustomProfile, removeCustomProfile } from './utils/custom-profiles'
 import Header from './components/Layout/Header'
 import CallToAction from './components/Layout/CallToAction'
 import ProfileSelector from './components/ProfileSelector/ProfileSelector'
@@ -10,26 +11,35 @@ import MixSliders from './components/MixSliders/MixSliders'
 import HourlyHeatmap from './components/Charts/HourlyHeatmap'
 import TechnologyContributionChart from './components/Charts/TechnologyContributionChart'
 import AverageDayChart from './components/Charts/AverageDayChart'
+import CsvUpload from './components/CsvUpload/CsvUpload'
 import './App.css'
 
 const DEFAULT_PROFILE_ID = 'data-centre'
 
-function buildInitialMix(): GenerationMix {
-  return {}
-}
-
 function App() {
+  const [customProfiles, setCustomProfiles] = useState<Profile[]>(loadCustomProfiles)
   const [selectedProfileId, setSelectedProfileId] = useState(DEFAULT_PROFILE_ID)
-  const [mix, setMix] = useState<GenerationMix>(buildInitialMix)
+  const [mix, setMix] = useState<GenerationMix>({})
+  const [uploadTarget, setUploadTarget] = useState<'consumption' | 'generation' | null>(null)
+
+  // Merge built-in + custom profiles
+  const allConsumption = useMemo(
+    () => [...builtInConsumption, ...customProfiles.filter((p) => p.category === 'consumption')],
+    [customProfiles]
+  )
+  const allGeneration = useMemo(
+    () => [...builtInGeneration, ...customProfiles.filter((p) => p.category === 'generation')],
+    [customProfiles]
+  )
 
   const selectedProfile = useMemo(
-    () => consumptionProfiles.find((p) => p.id === selectedProfileId) ?? consumptionProfiles[0],
-    [selectedProfileId]
+    () => allConsumption.find((p) => p.id === selectedProfileId) ?? allConsumption[0],
+    [selectedProfileId, allConsumption]
   )
 
   const result = useMemo(
-    () => calculateHourlyMatching(selectedProfile, mix, generationProfiles),
-    [selectedProfile, mix]
+    () => calculateHourlyMatching(selectedProfile, mix, allGeneration),
+    [selectedProfile, mix, allGeneration]
   )
 
   const monthlyConsumption = useMemo(
@@ -47,6 +57,25 @@ function App() {
     setMix((prev) => ({ ...prev, [technology]: percentage }))
   }, [])
 
+  const handleProfileUploaded = useCallback((profile: Profile) => {
+    saveCustomProfile(profile)
+    setCustomProfiles(loadCustomProfiles())
+
+    if (profile.category === 'consumption') {
+      setSelectedProfileId(profile.id)
+    }
+    setUploadTarget(null)
+  }, [])
+
+  const handleRemoveCustomProfile = useCallback((id: string) => {
+    removeCustomProfile(id)
+    setCustomProfiles(loadCustomProfiles())
+    // If the removed profile was selected, reset to default
+    if (selectedProfileId === id) {
+      setSelectedProfileId(DEFAULT_PROFILE_ID)
+    }
+  }, [selectedProfileId])
+
   return (
     <div className="app">
       <Header />
@@ -63,14 +92,20 @@ function App() {
         <div className="controls-and-score">
           <section className="controls-section">
             <ProfileSelector
-              profiles={consumptionProfiles}
+              profiles={allConsumption}
               selectedProfileId={selectedProfileId}
               onSelect={setSelectedProfileId}
+              onUploadClick={() => setUploadTarget('consumption')}
+              onRemoveCustom={handleRemoveCustomProfile}
+              customProfileIds={customProfiles.filter((p) => p.category === 'consumption').map((p) => p.id)}
             />
             <MixSliders
-              generationProfiles={generationProfiles}
+              generationProfiles={allGeneration}
               mix={mix}
               onMixChange={handleMixChange}
+              onUploadClick={() => setUploadTarget('generation')}
+              customProfileIds={customProfiles.filter((p) => p.category === 'generation').map((p) => p.id)}
+              onRemoveCustom={handleRemoveCustomProfile}
             />
           </section>
           <div className="cfe-score">
@@ -92,7 +127,7 @@ function App() {
               <AverageDayChart
                 consumptionProfile={selectedProfile}
                 generationMix={mix}
-                generationProfiles={generationProfiles}
+                generationProfiles={allGeneration}
               />
             </div>
             <div className="chart-block chart-half">
@@ -116,6 +151,14 @@ function App() {
         </section>
         <CallToAction />
       </main>
+
+      {uploadTarget && (
+        <CsvUpload
+          category={uploadTarget}
+          onProfileUploaded={handleProfileUploaded}
+          onClose={() => setUploadTarget(null)}
+        />
+      )}
     </div>
   )
 }
