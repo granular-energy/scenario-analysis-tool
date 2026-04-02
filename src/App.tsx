@@ -12,14 +12,10 @@ import TechnologyContributionChart from './components/Charts/TechnologyContribut
 import AverageDayChart from './components/Charts/AverageDayChart'
 import './App.css'
 
-const DEFAULT_PROFILE_ID = 'uk-data-centre'
+const DEFAULT_PROFILE_ID = 'data-centre'
 
 function buildInitialMix(): GenerationMix {
-  const mix: GenerationMix = {}
-  for (const profile of generationProfiles) {
-    mix[profile.technology] = 0
-  }
-  return mix
+  return {}
 }
 
 function App() {

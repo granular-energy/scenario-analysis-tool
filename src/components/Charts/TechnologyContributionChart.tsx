@@ -1,17 +1,12 @@
 import Highcharts, { HighchartsReact } from '../../highcharts'
 import { useMemo } from 'react'
 import type { TechnologyContribution } from '../../types'
+import { getTechnologyColor } from '../../utils/colors'
 
 const MONTH_LABELS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
-
-const TECHNOLOGY_COLORS: Record<string, string> = {
-  'Wind Onshore': '#58CAA1',
-  'Solar PV': '#FDCF77',
-  'Hydro': '#6EA1DD',
-}
 
 interface TechnologyContributionChartProps {
   technologyContributions: TechnologyContribution[]
@@ -32,7 +27,7 @@ function TechnologyContributionChart({
           ? Math.round((matched / consumption) * 1000) / 10
           : 0
       }),
-      color: TECHNOLOGY_COLORS[contrib.technology] ?? undefined,
+      color: getTechnologyColor(contrib.technology),
       stacking: 'normal' as const,
     }))
   }, [technologyContributions, monthlyConsumption])

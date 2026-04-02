@@ -2,17 +2,12 @@ import Highcharts, { HighchartsReact } from '../../highcharts'
 import { useMemo } from 'react'
 import type { Profile, GenerationMix } from '../../types'
 import { scaleProfile } from '../../utils/matching'
+import { getTechnologyColor } from '../../utils/colors'
 
 interface AverageDayChartProps {
   consumptionProfile: Profile
   generationMix: GenerationMix
   generationProfiles: Profile[]
-}
-
-const TECHNOLOGY_COLORS: Record<string, string> = {
-  'Wind Onshore': '#58CAA1',
-  'Solar PV': '#FDCF77',
-  'Hydro': '#6EA1DD',
 }
 
 function AverageDayChart({
@@ -125,7 +120,7 @@ function AverageDayChart({
           type: 'area' as const,
           name: s.name,
           data: s.data,
-          color: TECHNOLOGY_COLORS[s.technology] ?? '#888',
+          color: getTechnologyColor(s.technology),
           stacking: 'normal' as Highcharts.OptionsStackingValue,
         })),
       ],

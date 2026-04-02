@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import type { GenerationMix, Profile } from '../../types'
 
 interface MixSlidersProps {
@@ -7,7 +7,34 @@ interface MixSlidersProps {
   onMixChange: (technology: string, percentage: number) => void
 }
 
+const MAX_SELECTIONS = 5
+
 function MixSliders({ generationProfiles, mix, onMixChange }: MixSlidersProps) {
+  const [selectedTechs, setSelectedTechs] = useState<string[]>([])
+
+  const availableProfiles = generationProfiles.filter(
+    (p) => !selectedTechs.includes(p.technology)
+  )
+
+  const handleAdd = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const tech = e.target.value
+      if (!tech) return
+      setSelectedTechs((prev) => [...prev, tech])
+      onMixChange(tech, 0)
+      e.target.value = ''
+    },
+    [onMixChange]
+  )
+
+  const handleRemove = useCallback(
+    (tech: string) => {
+      setSelectedTechs((prev) => prev.filter((t) => t !== tech))
+      onMixChange(tech, 0)
+    },
+    [onMixChange]
+  )
+
   const handleInputChange = useCallback(
     (technology: string, raw: string) => {
       const parsed = Number(raw)
@@ -20,45 +47,76 @@ function MixSliders({ generationProfiles, mix, onMixChange }: MixSlidersProps) {
 
   return (
     <div className="mix-sliders">
-      <h3>Generation Mix</h3>
+      <h3>Generation Portfolio</h3>
       <p className="mix-description">
+        Build your generation portfolio by adding up to {MAX_SELECTIONS} technologies.
         Each percentage represents how much of your annual consumption is covered
-        by that technology on an annual basis. For example, 60% wind means the
-        wind source generates energy equal to 60% of your total annual demand.
-        The total can exceed 100% (over-procurement) or be below 100%.
+        by that source. The total can exceed 100%.
       </p>
-      {generationProfiles.map((profile) => {
-        const value = mix[profile.technology] ?? 0
-        return (
-          <div key={profile.technology} className="slider-row">
-            <label htmlFor={`slider-${profile.technology}`}>
-              {profile.name}
-            </label>
-            <input
-              id={`slider-${profile.technology}`}
-              type="range"
-              min={0}
-              max={200}
-              step={1}
-              value={value}
-              onChange={(e) => onMixChange(profile.technology, Number(e.target.value))}
-            />
-            <div className="slider-value-group">
-              <input
-                className="slider-input"
-                type="number"
-                min={0}
-                max={200}
-                step={1}
-                value={value}
-                onChange={(e) => handleInputChange(profile.technology, e.target.value)}
-                aria-label={`${profile.name} percentage`}
-              />
-              <span className="slider-unit">%</span>
-            </div>
-          </div>
-        )
-      })}
+
+      {selectedTechs.length > 0 && (
+        <div className="slider-list">
+          {selectedTechs.map((tech) => {
+            const profile = generationProfiles.find((p) => p.technology === tech)
+            if (!profile) return null
+            const value = mix[tech] ?? 0
+            return (
+              <div key={tech} className="slider-row">
+                <label htmlFor={`slider-${tech}`}>{profile.name}</label>
+                <input
+                  id={`slider-${tech}`}
+                  type="range"
+                  min={0}
+                  max={200}
+                  step={1}
+                  value={value}
+                  onChange={(e) => onMixChange(tech, Number(e.target.value))}
+                />
+                <div className="slider-value-group">
+                  <input
+                    className="slider-input"
+                    type="number"
+                    min={0}
+                    max={200}
+                    step={1}
+                    value={value}
+                    onChange={(e) => handleInputChange(tech, e.target.value)}
+                    aria-label={`${profile.name} percentage`}
+                  />
+                  <span className="slider-unit">%</span>
+                </div>
+                <button
+                  className="slider-remove"
+                  onClick={() => handleRemove(tech)}
+                  aria-label={`Remove ${profile.name}`}
+                  type="button"
+                >
+                  &times;
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {selectedTechs.length < MAX_SELECTIONS && availableProfiles.length > 0 && (
+        <select
+          className="add-technology-select"
+          onChange={handleAdd}
+          value=""
+        >
+          <option value="">+ Add generation technology</option>
+          {availableProfiles.map((p) => (
+            <option key={p.technology} value={p.technology}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {selectedTechs.length === 0 && (
+        <p className="mix-empty">Select a generation technology to get started.</p>
+      )}
     </div>
   )
 }
