@@ -60,8 +60,8 @@ export function calculateHourlyMatching(
   const totalConsumption = consumptionProfile.data.reduce((a, b) => a + b, 0)
   const totalGen = totalGeneration.reduce((a, b) => a + b, 0)
   const cfeScore = totalConsumption > 0 ? (totalMatched / totalConsumption) * 100 : 0
-  // Annual matching: total generation / total consumption, capped at 100%
-  const annualScore = totalConsumption > 0 ? Math.min(100, (totalGen / totalConsumption) * 100) : 0
+  // Annual matching: total generation / total consumption (can exceed 100%)
+  const annualScore = totalConsumption > 0 ? (totalGen / totalConsumption) * 100 : 0
 
   const monthlyScores = MONTH_HOURS.map(({ start, end }) => {
     let monthConsumption = 0
