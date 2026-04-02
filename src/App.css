@@ -1,0 +1,78 @@
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.profile-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-selector label {
+  font-weight: 600;
+}
+
+.profile-selector select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.mix-sliders h3 {
+  margin: 0 0 0.75rem;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.slider-row label {
+  min-width: 160px;
+  font-weight: 500;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+}
+
+.slider-value {
+  min-width: 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.results {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.cfe-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cfe-score-value {
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cfe-score-label {
+  font-size: 1.25rem;
+  color: #666;
+}
