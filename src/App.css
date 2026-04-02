@@ -112,6 +112,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   line-height: 1rem;
+  text-align: center;
 }
 
 .cfe-score-description {

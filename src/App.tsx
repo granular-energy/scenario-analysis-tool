@@ -81,7 +81,7 @@ function App() {
             <span className="cfe-score-value">{Math.round(result.cfeScore)}%</span>
             <span className="cfe-score-label">Hourly Matching Score</span>
             <p className="cfe-score-description">
-              Percentage of consumption matched hourly by carbon-free generation.
+              Weighted average percentage matching in each hour.
               Surplus in any hour cannot cover deficits elsewhere.
             </p>
           </div>
