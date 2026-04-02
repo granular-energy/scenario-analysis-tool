@@ -1,0 +1,6 @@
+node_modules/
+dist/
+process/evals/
+STATUS
+EVAL.md
+.DS_Store
