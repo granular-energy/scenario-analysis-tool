@@ -11,6 +11,7 @@ import MixSliders from './components/MixSliders/MixSliders'
 import HourlyHeatmap from './components/Charts/HourlyHeatmap'
 import TechnologyContributionChart from './components/Charts/TechnologyContributionChart'
 import AverageDayChart from './components/Charts/AverageDayChart'
+import ExampleDayChart from './components/Charts/ExampleDayChart'
 import CsvUpload from './components/CsvUpload/CsvUpload'
 import './App.css'
 
@@ -147,12 +148,25 @@ function App() {
               />
             </div>
           </div>
-          <div className="chart-block">
-            <p className="chart-description">
-              Every hour of the year by matching percentage. Green = fully matched,
-              red = significant gap between generation and consumption.
-            </p>
-            <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
+          <div className="charts-row">
+            <div className="chart-block chart-half">
+              <p className="chart-description">
+                Every hour of the year by matching percentage. Green = fully matched,
+                red = significant gap between generation and consumption.
+              </p>
+              <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
+            </div>
+            <div className="chart-block chart-half">
+              <p className="chart-description">
+                A specific day showing the hour-by-hour interplay between
+                consumption and generation.
+              </p>
+              <ExampleDayChart
+                consumptionProfile={selectedProfile}
+                generationMix={mix}
+                generationProfiles={allGeneration}
+              />
+            </div>
           </div>
         </section>
         <CallToAction />
