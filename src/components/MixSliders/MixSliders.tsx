@@ -41,7 +41,6 @@ function MixSliders({
     (tech: string) => {
       setSelectedTechs((prev) => prev.filter((t) => t !== tech))
       onMixChange(tech, 0)
-      // Also remove from custom profiles if it's custom
       const profile = generationProfiles.find((p) => p.technology === tech)
       if (profile && customProfileIds.includes(profile.id) && onRemoveCustom) {
         onRemoveCustom(profile.id)
@@ -116,14 +115,18 @@ function MixSliders({
         </div>
       )}
 
-      <div className="mix-actions">
+      {selectedTechs.length === 0 && (
+        <p className="mix-empty">Select a generation technology to get started.</p>
+      )}
+
+      <div className="control-card-actions">
         {selectedTechs.length < MAX_SELECTIONS && availableProfiles.length > 0 && (
           <select
-            className="add-technology-select"
+            className="control-select"
             onChange={handleAdd}
             value=""
           >
-            <option value="">+ Add generation technology</option>
+            <option value="">+ Add technology</option>
             {availableProfiles.map((p) => (
               <option key={p.technology} value={p.technology}>
                 {p.name}
@@ -137,10 +140,6 @@ function MixSliders({
           </button>
         )}
       </div>
-
-      {selectedTechs.length === 0 && (
-        <p className="mix-empty">Select a generation technology to get started.</p>
-      )}
     </div>
   )
 }

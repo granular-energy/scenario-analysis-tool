@@ -26,10 +26,11 @@ function ProfileSelector({
       <p className="control-card-description">
         Select a load profile that best matches your consumption pattern.
       </p>
-      <label htmlFor="consumption-profile" className="control-field-label">Profile</label>
-      <div className="profile-selector-row">
+
+      <div className="control-select-row">
         <select
           id="consumption-profile"
+          className="control-select"
           value={selectedProfileId}
           onChange={(e) => onSelect(e.target.value)}
         >
@@ -59,11 +60,14 @@ function ProfileSelector({
           </button>
         )}
       </div>
-      {onUploadClick && (
-        <button className="upload-csv-btn" onClick={onUploadClick} type="button">
-          Upload custom CSV
-        </button>
-      )}
+
+      <div className="control-card-actions">
+        {onUploadClick && (
+          <button className="upload-csv-btn" onClick={onUploadClick} type="button">
+            Upload custom CSV
+          </button>
+        )}
+      </div>
     </div>
   )
 }
