@@ -50,7 +50,7 @@ export async function exportPdf(
     // Render at pixel size for canvas, then place at mm size in PDF
     const logoDataUrl = await loadLogoImage(logoWidthMm * 4, logoHeightMm * 4)
     pdf.addImage(logoDataUrl, 'PNG', margin, y + 5, logoWidthMm, logoHeightMm)
-    y += 5 + logoHeightMm + 3
+    y += 5 + logoHeightMm + 8
   } catch {
     // Fallback: text-only header if logo fails to load
     y += 8
@@ -233,7 +233,7 @@ export async function exportComparisonPdf(
     const logoWidthMm = (110.53 / 45.5) * logoHeightMm
     const logoDataUrl = await loadLogoImage(logoWidthMm * 4, logoHeightMm * 4)
     pdf.addImage(logoDataUrl, 'PNG', margin, y + 5, logoWidthMm, logoHeightMm)
-    y += 5 + logoHeightMm + 3
+    y += 5 + logoHeightMm + 8
   } catch {
     y += 8
     pdf.setFontSize(12)
