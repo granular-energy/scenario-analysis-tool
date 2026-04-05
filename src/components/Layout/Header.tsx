@@ -1,4 +1,9 @@
-function Header() {
+interface HeaderProps {
+  activeTab: 'builder' | 'compare'
+  onTabChange: (tab: 'builder' | 'compare') => void
+}
+
+function Header({ activeTab, onTabChange }: HeaderProps) {
   return (
     <header className="header">
       <div className="header-accent" />
@@ -9,7 +14,22 @@ function Header() {
           alt="Granular Energy"
           height="24"
         />
-        <h1 className="header-title">Scenario Analysis Tool v1</h1>
+        <nav className="header-nav">
+          <button
+            className={`header-tab${activeTab === 'builder' ? ' header-tab--active' : ''}`}
+            onClick={() => onTabChange('builder')}
+            type="button"
+          >
+            Builder
+          </button>
+          <button
+            className={`header-tab${activeTab === 'compare' ? ' header-tab--active' : ''}`}
+            onClick={() => onTabChange('compare')}
+            type="button"
+          >
+            Compare
+          </button>
+        </nav>
       </div>
     </header>
   )

@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react'
-import type { GenerationMix, Profile } from './types'
+import type { GenerationMix, Profile, SavedScenario } from './types'
 import { consumptionProfiles as builtInConsumption } from './data/profiles/consumption'
 import { generationProfiles as builtInGeneration } from './data/profiles/generation'
 import { calculateHourlyMatching, MONTH_HOURS } from './utils/matching'
 import { loadCustomProfiles, saveCustomProfile, removeCustomProfile } from './utils/custom-profiles'
+import { loadSavedScenarios, saveSavedScenario, removeSavedScenario } from './utils/saved-scenarios'
 import Header from './components/Layout/Header'
 import CallToAction from './components/Layout/CallToAction'
 import ProfileSelector from './components/ProfileSelector/ProfileSelector'
@@ -14,6 +15,10 @@ import AverageDayChart from './components/Charts/AverageDayChart'
 import ExampleDayChart from './components/Charts/ExampleDayChart'
 import CsvUpload from './components/CsvUpload/CsvUpload'
 import ExportPdf from './components/ExportPdf/ExportPdf'
+import SaveScenarioButton from './components/ScenarioManager/SaveScenarioButton'
+import SavedScenariosList from './components/ScenarioManager/SavedScenariosList'
+import CompareView from './components/CompareView/CompareView'
+import ComparisonExportPdf from './components/CompareView/ComparisonExportPdf'
 import './App.css'
 
 const DEFAULT_PROFILE_ID = 'data-centre'
@@ -24,6 +29,12 @@ function App() {
   const [mix, setMix] = useState<GenerationMix>({})
   const [uploadTarget, setUploadTarget] = useState<'consumption' | 'generation' | null>(null)
   const [showExport, setShowExport] = useState(false)
+
+  // Tab + comparison state
+  const [activeTab, setActiveTab] = useState<'builder' | 'compare'>('builder')
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>(loadSavedScenarios)
+  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([])
+  const [showCompareExport, setShowCompareExport] = useState(false)
 
   // Merge built-in + custom profiles
   const allConsumption = useMemo(
@@ -73,112 +84,165 @@ function App() {
   const handleRemoveCustomProfile = useCallback((id: string) => {
     removeCustomProfile(id)
     setCustomProfiles(loadCustomProfiles())
-    // If the removed profile was selected, reset to default
     if (selectedProfileId === id) {
       setSelectedProfileId(DEFAULT_PROFILE_ID)
     }
   }, [selectedProfileId])
 
+  const handleSaveScenario = useCallback((name: string) => {
+    const scenario: SavedScenario = {
+      id: crypto.randomUUID(),
+      name,
+      createdAt: Date.now(),
+      consumptionProfileId: selectedProfileId,
+      consumptionProfileName: selectedProfile.name,
+      generationMix: { ...mix },
+    }
+    saveSavedScenario(scenario)
+    setSavedScenarios(loadSavedScenarios())
+  }, [selectedProfileId, selectedProfile.name, mix])
+
+  const handleDeleteScenario = useCallback((id: string) => {
+    removeSavedScenario(id)
+    setSavedScenarios(loadSavedScenarios())
+    setSelectedForComparison((prev) => prev.filter((s) => s !== id))
+  }, [])
+
+  const handleLoadScenario = useCallback((scenario: SavedScenario) => {
+    setSelectedProfileId(scenario.consumptionProfileId)
+    setMix(scenario.generationMix)
+    setActiveTab('builder')
+  }, [])
+
   return (
     <div className="app">
-      <Header />
+      <Header activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="main">
-        <div className="intro">
-          <h2 className="intro-title">Estimate your hourly energy matching score</h2>
-          <p className="intro-description">
-            Select a consumption profile and adjust the generation mix to see how well
-            your energy supply matches demand on an hour-by-hour basis. Unlike annual
-            matching, hourly matching reveals how much of your consumption is truly
-            covered by carbon-free energy in each hour of the year.
-          </p>
-        </div>
-        <div className="controls-and-score">
-          <section className="controls-section">
-            <ProfileSelector
-              profiles={allConsumption}
-              selectedProfileId={selectedProfileId}
-              onSelect={setSelectedProfileId}
-              onUploadClick={() => setUploadTarget('consumption')}
-              onRemoveCustom={handleRemoveCustomProfile}
-              customProfileIds={customProfiles.filter((p) => p.category === 'consumption').map((p) => p.id)}
+        {activeTab === 'builder' && (
+          <>
+            <div className="intro">
+              <h2 className="intro-title">Estimate your hourly energy matching score</h2>
+              <p className="intro-description">
+                Select a consumption profile and adjust the generation mix to see how well
+                your energy supply matches demand on an hour-by-hour basis. Unlike annual
+                matching, hourly matching reveals how much of your consumption is truly
+                covered by carbon-free energy in each hour of the year.
+              </p>
+            </div>
+            <div className="controls-and-score">
+              <section className="controls-section">
+                <ProfileSelector
+                  profiles={allConsumption}
+                  selectedProfileId={selectedProfileId}
+                  onSelect={setSelectedProfileId}
+                  onUploadClick={() => setUploadTarget('consumption')}
+                  onRemoveCustom={handleRemoveCustomProfile}
+                  customProfileIds={customProfiles.filter((p) => p.category === 'consumption').map((p) => p.id)}
+                />
+                <MixSliders
+                  generationProfiles={allGeneration}
+                  mix={mix}
+                  onMixChange={handleMixChange}
+                  onUploadClick={() => setUploadTarget('generation')}
+                  customProfileIds={customProfiles.filter((p) => p.category === 'generation').map((p) => p.id)}
+                  onRemoveCustom={handleRemoveCustomProfile}
+                />
+              </section>
+              <div className="score-panel">
+                <div className="score-card score-card-primary">
+                  <span className="score-value">{Math.round(result.cfeScore)}%</span>
+                  <span className="score-label">Hourly Matching</span>
+                </div>
+                <div className="score-card score-card-secondary">
+                  <span className="score-value score-value-secondary">{Math.round(result.annualScore)}%</span>
+                  <span className="score-label">Annual Matching</span>
+                </div>
+                <p className="score-description">
+                  Hourly matching score is the weighted average percentage matching
+                  in each hour. Surplus in any hour cannot cover deficits in other hours.
+                </p>
+                <div className="score-panel-actions">
+                  <button
+                    className="export-btn"
+                    onClick={() => setShowExport(true)}
+                    type="button"
+                  >
+                    Export PDF
+                  </button>
+                  <SaveScenarioButton onSave={handleSaveScenario} />
+                </div>
+              </div>
+            </div>
+
+            <SavedScenariosList
+              scenarios={savedScenarios}
+              onLoad={handleLoadScenario}
+              onDelete={handleDeleteScenario}
             />
-            <MixSliders
-              generationProfiles={allGeneration}
-              mix={mix}
-              onMixChange={handleMixChange}
-              onUploadClick={() => setUploadTarget('generation')}
-              customProfileIds={customProfiles.filter((p) => p.category === 'generation').map((p) => p.id)}
-              onRemoveCustom={handleRemoveCustomProfile}
+
+            <section className="results-section">
+              <div className="charts-row">
+                <div className="chart-block chart-half">
+                  <p className="chart-description">
+                    Average consumption and generation shape over 24 hours.
+                    Grey area shows unmatched consumption.
+                  </p>
+                  <AverageDayChart
+                    consumptionProfile={selectedProfile}
+                    generationMix={mix}
+                    generationProfiles={allGeneration}
+                  />
+                </div>
+                <div className="chart-block chart-half">
+                  <p className="chart-description">
+                    Monthly technology contribution to matched energy.
+                    A diversified mix gives better year-round coverage.
+                  </p>
+                  <TechnologyContributionChart
+                    technologyContributions={result.technologyContributions}
+                    monthlyConsumption={monthlyConsumption}
+                  />
+                </div>
+              </div>
+              <div className="charts-row">
+                <div className="chart-block chart-half">
+                  <p className="chart-description">
+                    Every hour of the year by matching percentage. Green = fully matched,
+                    red = significant gap between generation and consumption.
+                  </p>
+                  <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
+                </div>
+                <div className="chart-block chart-half">
+                  <p className="chart-description">
+                    A specific day showing the hour-by-hour interplay between
+                    consumption and generation.
+                  </p>
+                  <ExampleDayChart
+                    consumptionProfile={selectedProfile}
+                    generationMix={mix}
+                    generationProfiles={allGeneration}
+                  />
+                </div>
+              </div>
+            </section>
+            <CallToAction />
+          </>
+        )}
+
+        {activeTab === 'compare' && (
+          <>
+            <CompareView
+              savedScenarios={savedScenarios}
+              allConsumption={allConsumption}
+              allGeneration={allGeneration}
+              selectedIds={selectedForComparison}
+              onSelectionChange={setSelectedForComparison}
+              onDelete={handleDeleteScenario}
+              onExportPdf={() => setShowCompareExport(true)}
             />
-          </section>
-          <div className="score-panel">
-            <div className="score-card score-card-primary">
-              <span className="score-value">{Math.round(result.cfeScore)}%</span>
-              <span className="score-label">Hourly Matching</span>
-            </div>
-            <div className="score-card score-card-secondary">
-              <span className="score-value score-value-secondary">{Math.round(result.annualScore)}%</span>
-              <span className="score-label">Annual Matching</span>
-            </div>
-            <p className="score-description">
-              Hourly matching score is the weighted average percentage matching
-              in each hour. Surplus in any hour cannot cover deficits in other hours.
-            </p>
-            <button
-              className="export-btn"
-              onClick={() => setShowExport(true)}
-              type="button"
-            >
-              Export PDF
-            </button>
-          </div>
-        </div>
-        <section className="results-section">
-          <div className="charts-row">
-            <div className="chart-block chart-half">
-              <p className="chart-description">
-                Average consumption and generation shape over 24 hours.
-                Grey area shows unmatched consumption.
-              </p>
-              <AverageDayChart
-                consumptionProfile={selectedProfile}
-                generationMix={mix}
-                generationProfiles={allGeneration}
-              />
-            </div>
-            <div className="chart-block chart-half">
-              <p className="chart-description">
-                Monthly technology contribution to matched energy.
-                A diversified mix gives better year-round coverage.
-              </p>
-              <TechnologyContributionChart
-                technologyContributions={result.technologyContributions}
-                monthlyConsumption={monthlyConsumption}
-              />
-            </div>
-          </div>
-          <div className="charts-row">
-            <div className="chart-block chart-half">
-              <p className="chart-description">
-                Every hour of the year by matching percentage. Green = fully matched,
-                red = significant gap between generation and consumption.
-              </p>
-              <HourlyHeatmap hourlyMatchingPercentage={result.hourlyMatchingPercentage} />
-            </div>
-            <div className="chart-block chart-half">
-              <p className="chart-description">
-                A specific day showing the hour-by-hour interplay between
-                consumption and generation.
-              </p>
-              <ExampleDayChart
-                consumptionProfile={selectedProfile}
-                generationMix={mix}
-                generationProfiles={allGeneration}
-              />
-            </div>
-          </div>
-        </section>
-        <CallToAction />
+            <CallToAction />
+          </>
+        )}
       </main>
 
       {showExport && (
@@ -188,6 +252,16 @@ function App() {
           consumptionName={selectedProfile.name}
           generationMix={mix}
           onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {showCompareExport && (
+        <ComparisonExportPdf
+          savedScenarios={savedScenarios}
+          selectedIds={selectedForComparison}
+          allConsumption={allConsumption}
+          allGeneration={allGeneration}
+          onClose={() => setShowCompareExport(false)}
         />
       )}
 

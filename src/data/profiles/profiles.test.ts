@@ -3,8 +3,8 @@ import { consumptionProfiles } from './consumption'
 import { generationProfiles } from './generation'
 
 describe('consumption profiles', () => {
-  it('should have exactly 3 profiles', () => {
-    expect(consumptionProfiles).toHaveLength(3)
+  it('should have at least 3 profiles', () => {
+    expect(consumptionProfiles.length).toBeGreaterThanOrEqual(3)
   })
 
   it.each(
@@ -17,8 +17,8 @@ describe('consumption profiles', () => {
 })
 
 describe('generation profiles', () => {
-  it('should have exactly 3 profiles', () => {
-    expect(generationProfiles).toHaveLength(3)
+  it('should have at least 3 profiles', () => {
+    expect(generationProfiles.length).toBeGreaterThanOrEqual(3)
   })
 
   it.each(

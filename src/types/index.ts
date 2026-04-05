@@ -26,3 +26,12 @@ export interface MatchingResult {
   hourlyMatchingPercentage: number[]
   technologyContributions: TechnologyContribution[]
 }
+
+export interface SavedScenario {
+  id: string
+  name: string
+  createdAt: number
+  consumptionProfileId: string
+  consumptionProfileName: string
+  generationMix: GenerationMix
+}
