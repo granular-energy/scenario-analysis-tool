@@ -13,6 +13,7 @@ import TechnologyContributionChart from './components/Charts/TechnologyContribut
 import AverageDayChart from './components/Charts/AverageDayChart'
 import ExampleDayChart from './components/Charts/ExampleDayChart'
 import CsvUpload from './components/CsvUpload/CsvUpload'
+import ExportPdf from './components/ExportPdf/ExportPdf'
 import './App.css'
 
 const DEFAULT_PROFILE_ID = 'data-centre'
@@ -22,6 +23,7 @@ function App() {
   const [selectedProfileId, setSelectedProfileId] = useState(DEFAULT_PROFILE_ID)
   const [mix, setMix] = useState<GenerationMix>({})
   const [uploadTarget, setUploadTarget] = useState<'consumption' | 'generation' | null>(null)
+  const [showExport, setShowExport] = useState(false)
 
   // Merge built-in + custom profiles
   const allConsumption = useMemo(
@@ -122,6 +124,13 @@ function App() {
               Hourly matching score is the weighted average percentage matching
               in each hour. Surplus in any hour cannot cover deficits in other hours.
             </p>
+            <button
+              className="export-btn"
+              onClick={() => setShowExport(true)}
+              type="button"
+            >
+              Export PDF
+            </button>
           </div>
         </div>
         <section className="results-section">
@@ -171,6 +180,16 @@ function App() {
         </section>
         <CallToAction />
       </main>
+
+      {showExport && (
+        <ExportPdf
+          hourlyScore={result.cfeScore}
+          annualScore={result.annualScore}
+          consumptionName={selectedProfile.name}
+          generationMix={mix}
+          onClose={() => setShowExport(false)}
+        />
+      )}
 
       {uploadTarget && (
         <CsvUpload
