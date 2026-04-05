@@ -129,8 +129,9 @@ function App() {
                 covered by carbon-free energy in each hour of the year.
               </p>
             </div>
-            <div className="controls-and-score">
-              <section className="controls-section">
+            <div className="controls-row">
+              <section className="control-card">
+                <h3 className="control-card-title">Consumption</h3>
                 <ProfileSelector
                   profiles={allConsumption}
                   selectedProfileId={selectedProfileId}
@@ -139,6 +140,9 @@ function App() {
                   onRemoveCustom={handleRemoveCustomProfile}
                   customProfileIds={customProfiles.filter((p) => p.category === 'consumption').map((p) => p.id)}
                 />
+              </section>
+              <section className="control-card">
+                <h3 className="control-card-title">Generation</h3>
                 <MixSliders
                   generationProfiles={allGeneration}
                   mix={mix}
@@ -148,7 +152,10 @@ function App() {
                   onRemoveCustom={handleRemoveCustomProfile}
                 />
               </section>
-              <div className="score-panel">
+            </div>
+
+            <div className="score-panel">
+              <div className="score-panel-inner">
                 <div className="score-card score-card-primary">
                   <span className="score-value">{Math.round(result.cfeScore)}%</span>
                   <span className="score-label">Hourly Matching</span>
@@ -157,20 +164,20 @@ function App() {
                   <span className="score-value score-value-secondary">{Math.round(result.annualScore)}%</span>
                   <span className="score-label">Annual Matching</span>
                 </div>
-                <p className="score-description">
-                  Hourly matching score is the weighted average percentage matching
-                  in each hour. Surplus in any hour cannot cover deficits in other hours.
-                </p>
-                <div className="score-panel-actions">
-                  <button
-                    className="export-btn"
-                    onClick={() => setShowExport(true)}
-                    type="button"
-                  >
-                    Export PDF
-                  </button>
-                  <SaveScenarioButton onSave={handleSaveScenario} />
-                </div>
+              </div>
+              <p className="score-description">
+                Hourly matching measures how much of your consumption is covered by
+                generation in each hour. Surplus cannot offset deficits in other hours.
+              </p>
+              <div className="score-panel-actions">
+                <SaveScenarioButton onSave={handleSaveScenario} />
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowExport(true)}
+                  type="button"
+                >
+                  Export PDF
+                </button>
               </div>
             </div>
 

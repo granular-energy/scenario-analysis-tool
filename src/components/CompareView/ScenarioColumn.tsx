@@ -1,4 +1,4 @@
-const COMPARISON_COLORS = ['#00988B', '#E8A838', '#5B8DEF']
+const COMPARISON_COLORS = ['#00988B', '#08875D', '#6EA1DD']
 
 interface ScenarioColumnProps {
   name: string

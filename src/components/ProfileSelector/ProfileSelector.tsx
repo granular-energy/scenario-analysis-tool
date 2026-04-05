@@ -23,7 +23,10 @@ function ProfileSelector({
 
   return (
     <div className="profile-selector">
-      <label htmlFor="consumption-profile">Consumption Profile</label>
+      <p className="control-card-description">
+        Select a load profile that best matches your consumption pattern.
+      </p>
+      <label htmlFor="consumption-profile" className="control-field-label">Profile</label>
       <div className="profile-selector-row">
         <select
           id="consumption-profile"

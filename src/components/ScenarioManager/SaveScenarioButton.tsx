@@ -27,7 +27,7 @@ function SaveScenarioButton({ onSave }: SaveScenarioButtonProps) {
   if (!editing) {
     return (
       <button
-        className="export-btn"
+        className="btn-primary"
         onClick={() => setEditing(true)}
         type="button"
       >

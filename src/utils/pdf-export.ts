@@ -206,9 +206,9 @@ interface ComparisonScenario {
 }
 
 const COMPARISON_COLORS: [number, number, number][] = [
-  [0, 152, 139],   // teal
-  [232, 168, 56],  // amber
-  [91, 141, 239],  // blue
+  [0, 152, 139],   // teal-700
+  [8, 135, 93],    // green-700
+  [110, 161, 221], // blue
 ]
 
 export async function exportComparisonPdf(

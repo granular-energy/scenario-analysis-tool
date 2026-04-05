@@ -62,11 +62,9 @@ function MixSliders({
 
   return (
     <div className="mix-sliders">
-      <h3>Generation Portfolio</h3>
-      <p className="mix-description">
-        Build your generation portfolio by adding up to {MAX_SELECTIONS} technologies.
-        Each percentage represents how much of your annual consumption is covered
-        by that source. The total can exceed 100%.
+      <p className="control-card-description">
+        Add up to {MAX_SELECTIONS} technologies. Each percentage represents share
+        of annual consumption. Total can exceed 100%.
       </p>
 
       {selectedTechs.length > 0 && (
