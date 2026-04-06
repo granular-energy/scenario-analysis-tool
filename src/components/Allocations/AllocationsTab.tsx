@@ -23,15 +23,21 @@ function AllocationsTab() {
     [dispatch]
   )
 
+  const handleAllocate = useCallback(() => {
+    dispatch({ type: 'ALLOCATE' })
+  }, [dispatch])
+
   const sankeyLinks = useMemo(() => {
-    if (!state.dateRange) return []
+    if (!state.dateRange || !state.isAllocated) return []
     return computeSankeyLinks(
       state.generators,
       state.consumers,
       state.allocationMatrix,
       state.dateRange
     )
-  }, [state.generators, state.consumers, state.allocationMatrix, state.dateRange])
+  }, [state.generators, state.consumers, state.allocationMatrix, state.dateRange, state.isAllocated])
+
+  const hasProfiles = state.consumers.length > 0 && state.generators.length > 0
 
   return (
     <div className="allocations-tab">
@@ -63,9 +69,30 @@ function AllocationsTab() {
           matrix={state.allocationMatrix}
           onAllocationChange={handleAllocationChange}
         />
+        {hasProfiles && (
+          <div className="allocate-action">
+            <button
+              className="btn-primary allocate-btn"
+              onClick={handleAllocate}
+              type="button"
+            >
+              Allocate
+            </button>
+            {!state.isAllocated && (
+              <span className="allocate-hint">
+                Press Allocate to calculate results and view energy flows.
+              </span>
+            )}
+            {state.isAllocated && (
+              <span className="allocate-hint allocate-hint--done">
+                Allocation applied. View results in the Results tab.
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      <SankeyDiagram links={sankeyLinks} />
+      {state.isAllocated && <SankeyDiagram links={sankeyLinks} />}
     </div>
   )
 }

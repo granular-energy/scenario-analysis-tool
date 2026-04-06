@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { usePortfolio } from '../../context/usePortfolio'
 import ProfileCard from './ProfileCard'
 import CsvUploadDialog from './CsvUploadDialog'
+import { exampleConsumers, exampleGenerators } from '../../data/examples'
 import type { PortfolioProfile } from '../../types'
 
 const MAX_PROFILES = 5
@@ -25,6 +26,26 @@ function PortfolioTab() {
     [dispatch]
   )
 
+  const handleLoadExamples = useCallback(() => {
+    const existingIds = new Set([
+      ...state.consumers.map((c) => c.id),
+      ...state.generators.map((g) => g.id),
+    ])
+    for (const p of exampleConsumers) {
+      if (!existingIds.has(p.id) && state.consumers.length < MAX_PROFILES) {
+        dispatch({ type: 'ADD_PROFILE', profile: p })
+      }
+    }
+    for (const p of exampleGenerators) {
+      if (!existingIds.has(p.id) && state.generators.length < MAX_PROFILES) {
+        dispatch({ type: 'ADD_PROFILE', profile: p })
+      }
+    }
+  }, [state.consumers, state.generators, dispatch])
+
+  const hasExamples = state.consumers.some((c) => c.id.startsWith('example-')) ||
+    state.generators.some((g) => g.id.startsWith('example-'))
+
   return (
     <div className="portfolio-tab">
       <div className="intro">
@@ -34,6 +55,15 @@ function PortfolioTab() {
           Each profile is a two-column CSV with timestamps and MWh values.
         </p>
       </div>
+
+      {state.consumers.length === 0 && state.generators.length === 0 && (
+        <div className="example-banner">
+          <p>New here? Load example profiles to try the tool.</p>
+          <button className="btn-primary" onClick={handleLoadExamples} type="button">
+            Load Example Profiles
+          </button>
+        </div>
+      )}
 
       <div className="controls-row">
         <section className="control-card">
@@ -101,6 +131,15 @@ function PortfolioTab() {
                 type="button"
               >
                 + Add Generation Profile
+              </button>
+            )}
+            {!hasExamples && state.generators.length < MAX_PROFILES && (
+              <button
+                className="btn-secondary"
+                onClick={handleLoadExamples}
+                type="button"
+              >
+                Load Examples
               </button>
             )}
           </div>

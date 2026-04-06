@@ -60,6 +60,7 @@ export interface PortfolioState {
   dateRange: DateRange | null
   activeTab: 'portfolio' | 'allocations' | 'results'
   selectedConsumerId: string | null
+  isAllocated: boolean
 }
 
 /** Actions for the portfolio reducer */
@@ -70,3 +71,4 @@ export type PortfolioAction =
   | { type: 'SET_DATE_RANGE'; range: DateRange }
   | { type: 'SET_ACTIVE_TAB'; tab: PortfolioState['activeTab'] }
   | { type: 'SELECT_CONSUMER'; consumerId: string }
+  | { type: 'ALLOCATE' }

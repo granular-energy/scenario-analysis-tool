@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import { usePortfolio } from '../../context/usePortfolio'
 import ConsumerSelector from './ConsumerSelector'
 import ScoreCards from './ScoreCards'
@@ -8,10 +8,14 @@ import MonthlyBreakdownChart from '../Charts/MonthlyBreakdownChart'
 import GeneratorContributionChart from '../Charts/GeneratorContributionChart'
 import { calculateConsumerMatching } from '../../utils/matching-v2'
 import { filterToRange, toHourly } from '../../utils/timeseries'
+import { exportResultsPdf } from '../../utils/pdf-export'
 import type { DateRange } from '../../types'
 
 function ResultsTab() {
   const { state, dispatch } = usePortfolio()
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [exportTitle, setExportTitle] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   const handleConsumerSelect = useCallback(
     (id: string) => dispatch({ type: 'SELECT_CONSUMER', consumerId: id }),
@@ -29,22 +33,20 @@ function ResultsTab() {
   )
 
   const result = useMemo(() => {
-    if (!selectedConsumer || !state.dateRange) return null
+    if (!selectedConsumer || !state.dateRange || !state.isAllocated) return null
     return calculateConsumerMatching(
       selectedConsumer,
       state.generators,
       state.allocationMatrix,
       state.dateRange
     )
-  }, [selectedConsumer, state.generators, state.allocationMatrix, state.dateRange])
+  }, [selectedConsumer, state.generators, state.allocationMatrix, state.dateRange, state.isAllocated])
 
-  // Get hourly timestamps for heatmap (aligned to consumer's filtered range)
   const heatmapTimestamps = useMemo(() => {
     if (!selectedConsumer || !state.dateRange) return []
     return toHourly(filterToRange(selectedConsumer.timeSeries, state.dateRange)).timestamps
   }, [selectedConsumer, state.dateRange])
 
-  // Monthly consumption for the generator contribution chart
   const monthlyConsumptionMWh = useMemo(() => {
     if (!result) return new Array<number>(12).fill(0)
     const monthly = new Array<number>(12).fill(0)
@@ -55,7 +57,25 @@ function ResultsTab() {
     return monthly
   }, [result, heatmapTimestamps])
 
-  const hasData = state.consumers.length > 0 && state.generators.length > 0 && state.dateRange
+  const handleExportPdf = useCallback(async () => {
+    if (!result || !selectedConsumer) return
+    setExporting(true)
+    try {
+      await exportResultsPdf(
+        exportTitle,
+        selectedConsumer.name,
+        result.cfeScore,
+        result.annualScore,
+        '.results-charts'
+      )
+      setShowExportDialog(false)
+      setExportTitle('')
+    } finally {
+      setExporting(false)
+    }
+  }, [result, selectedConsumer, exportTitle])
+
+  const hasData = state.consumers.length > 0 && state.generators.length > 0 && state.dateRange && state.isAllocated
 
   if (!hasData) {
     return (
@@ -68,8 +88,8 @@ function ResultsTab() {
         </div>
         <div className="results-empty">
           <p>
-            Add consumption and generation profiles on the Portfolio tab,
-            then set allocations to see results.
+            Add profiles on the Portfolio tab, set allocations, and press
+            Allocate on the Allocations tab to see results.
           </p>
         </div>
       </div>
@@ -95,41 +115,91 @@ function ResultsTab() {
           dateRange={state.dateRange}
           onChange={handleDateRangeChange}
         />
+        <div className="results-actions">
+          <button
+            className="btn-secondary"
+            onClick={() => setShowExportDialog(true)}
+            type="button"
+            disabled={!result}
+          >
+            Export PDF
+          </button>
+        </div>
       </div>
 
       {result && (
         <>
           <ScoreCards cfeScore={result.cfeScore} annualScore={result.annualScore} />
 
-          <div className="charts-row">
-            <div className="chart-block chart-half">
-              <p className="chart-description">
-                Monthly CFE matching score for the selected consumer.
-              </p>
-              <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
+          <div className="results-charts">
+            <div className="charts-row">
+              <div className="chart-block chart-half">
+                <p className="chart-description">
+                  Monthly CFE matching score for the selected consumer.
+                </p>
+                <MonthlyBreakdownChart monthlyScores={result.monthlyScores} />
+              </div>
+              <div className="chart-block chart-half">
+                <p className="chart-description">
+                  Which generators contribute most to the consumer's hourly matching.
+                </p>
+                <GeneratorContributionChart
+                  contributions={result.generatorContributions}
+                  monthlyConsumptionMWh={monthlyConsumptionMWh}
+                />
+              </div>
             </div>
-            <div className="chart-block chart-half">
+
+            <div className="chart-block">
               <p className="chart-description">
-                Which generators contribute most to the consumer's hourly matching.
+                Every hour by matching percentage. Green = fully matched,
+                red = significant gap between allocated generation and consumption.
               </p>
-              <GeneratorContributionChart
-                contributions={result.generatorContributions}
-                monthlyConsumptionMWh={monthlyConsumptionMWh}
+              <HourlyHeatmap
+                timestamps={heatmapTimestamps}
+                hourlyMatchingPercentage={result.hourlyMatchingPercentage}
               />
             </div>
           </div>
-
-          <div className="chart-block">
-            <p className="chart-description">
-              Every hour by matching percentage. Green = fully matched,
-              red = significant gap between allocated generation and consumption.
-            </p>
-            <HourlyHeatmap
-              timestamps={heatmapTimestamps}
-              hourlyMatchingPercentage={result.hourlyMatchingPercentage}
-            />
-          </div>
         </>
+      )}
+
+      {showExportDialog && (
+        <div className="csv-upload-overlay" onClick={() => setShowExportDialog(false)}>
+          <div className="csv-upload-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="csv-upload-header">
+              <h3>Export PDF Report</h3>
+              <button className="csv-upload-close" onClick={() => setShowExportDialog(false)} type="button">&times;</button>
+            </div>
+            <div className="csv-upload-body">
+              <div className="csv-upload-field">
+                <label htmlFor="pdf-title">Report title (optional)</label>
+                <input
+                  id="pdf-title"
+                  type="text"
+                  value={exportTitle}
+                  onChange={(e) => setExportTitle(e.target.value)}
+                  placeholder="e.g. Q1 2025 Analysis"
+                />
+              </div>
+              <p className="export-preview-text">
+                The PDF will include scores, charts, and configuration for{' '}
+                <strong>{selectedConsumer?.name}</strong>.
+              </p>
+            </div>
+            <div className="csv-upload-footer">
+              <button className="csv-upload-cancel" onClick={() => setShowExportDialog(false)} type="button">Cancel</button>
+              <button
+                className="csv-upload-submit"
+                onClick={handleExportPdf}
+                type="button"
+                disabled={exporting}
+              >
+                {exporting ? 'Generating...' : 'Export PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

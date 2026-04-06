@@ -14,12 +14,13 @@ const initialState: PortfolioState = {
   dateRange: null,
   activeTab: 'portfolio',
   selectedConsumerId: null,
+  isAllocated: false,
 }
 
 function recomputeDateRange(state: PortfolioState): PortfolioState {
   const allProfiles = [...state.consumers, ...state.generators]
   const overlap = computeOverlapRange(allProfiles)
-  return { ...state, dateRange: overlap }
+  return { ...state, dateRange: overlap, isAllocated: false }
 }
 
 function portfolioReducer(state: PortfolioState, action: PortfolioAction): PortfolioState {
@@ -83,11 +84,14 @@ function portfolioReducer(state: PortfolioState, action: PortfolioAction): Portf
         ...allocationMatrix[generatorId],
         [consumerId]: clamped,
       }
-      return { ...state, allocationMatrix }
+      return { ...state, allocationMatrix, isAllocated: false }
     }
 
     case 'SET_DATE_RANGE':
-      return { ...state, dateRange: action.range }
+      return { ...state, dateRange: action.range, isAllocated: false }
+
+    case 'ALLOCATE':
+      return { ...state, isAllocated: true }
 
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.tab }
