@@ -6,47 +6,44 @@ const MONTH_LABELS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ]
 
-const MONTH_START_DAYS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
-
-const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-
-function getDayOfYear(hour: number): number {
-  return Math.floor(hour / 24)
-}
-
-function getHourOfDay(hour: number): number {
-  return hour % 24
-}
-
-function formatDate(dayOfYear: number): string {
-  let remaining = dayOfYear
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ]
-  for (let m = 0; m < 12; m++) {
-    if (remaining < DAYS_IN_MONTH[m]) {
-      return `${remaining + 1} ${monthNames[m]}`
-    }
-    remaining -= DAYS_IN_MONTH[m]
-  }
-  return `31 December`
-}
-
 interface HourlyHeatmapProps {
+  timestamps: number[]
   hourlyMatchingPercentage: number[]
 }
 
-function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
-  const data = useMemo(() => {
+function HourlyHeatmap({ timestamps, hourlyMatchingPercentage }: HourlyHeatmapProps) {
+  const { data, maxDay, monthTicks } = useMemo(() => {
+    if (timestamps.length === 0) return { data: [], maxDay: 0, monthTicks: [] }
+
+    const startDate = new Date(timestamps[0])
+    const startOfYear = Date.UTC(startDate.getUTCFullYear(), 0, 1)
+    const msPerDay = 86_400_000
+
     const points: [number, number, number][] = []
-    for (let h = 0; h < 8760; h++) {
-      const day = getDayOfYear(h)
-      const hour = getHourOfDay(h)
-      points.push([day, hour, Math.round(hourlyMatchingPercentage[h] * 10) / 10])
+    const seenMonths = new Set<number>()
+    let maxD = 0
+
+    for (let i = 0; i < timestamps.length; i++) {
+      const d = new Date(timestamps[i])
+      const dayOffset = Math.floor((timestamps[i] - startOfYear) / msPerDay)
+      const hour = d.getUTCHours()
+      const val = Math.round((hourlyMatchingPercentage[i] ?? 0) * 10) / 10
+      points.push([dayOffset, hour, val])
+      if (dayOffset > maxD) maxD = dayOffset
+      seenMonths.add(d.getUTCMonth())
     }
-    return points
-  }, [hourlyMatchingPercentage])
+
+    // Build month tick positions
+    const ticks: { day: number; label: string }[] = []
+    const monthStartDays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+    for (let m = 0; m < 12; m++) {
+      if (seenMonths.has(m) && monthStartDays[m] <= maxD) {
+        ticks.push({ day: monthStartDays[m], label: MONTH_LABELS[m] })
+      }
+    }
+
+    return { data: points, maxDay: maxD, monthTicks: ticks }
+  }, [timestamps, hourlyMatchingPercentage])
 
   const options = useMemo<Highcharts.Options>(() => ({
     chart: {
@@ -59,16 +56,15 @@ function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
     },
     xAxis: {
       title: { text: undefined },
-      tickPositions: MONTH_START_DAYS,
+      tickPositions: monthTicks.map((t) => t.day),
       labels: {
         formatter: function (this: Highcharts.AxisLabelsFormatterContextObject): string {
-          const dayIndex = this.value as number
-          const monthIndex = MONTH_START_DAYS.indexOf(dayIndex)
-          return monthIndex >= 0 ? MONTH_LABELS[monthIndex] : ''
+          const tick = monthTicks.find((t) => t.day === this.value)
+          return tick?.label ?? ''
         },
       },
       min: 0,
-      max: 364,
+      max: maxDay,
     },
     yAxis: {
       title: { text: 'Hour of Day' },
@@ -90,22 +86,19 @@ function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
         [0.5, '#facc15'],
         [1, '#00988b'],
       ],
-      labels: {
-        format: '{value}%',
-      },
+      labels: { format: '{value}%' },
     },
     tooltip: {
       formatter: function (this: Highcharts.Point): string {
         const point = this as unknown as { x: number; y: number; value: number }
-        const date = formatDate(point.x)
         const hour = `${String(point.y).padStart(2, '0')}:00`
-        return `${date}, ${hour} — ${point.value.toFixed(0)}%`
+        return `Day ${point.x + 1}, ${hour} — ${point.value.toFixed(0)}%`
       },
     },
     series: [{
       type: 'heatmap' as const,
       name: 'CFE Matching',
-      data: data,
+      data,
       colsize: 1,
       rowsize: 1,
       borderWidth: 0,
@@ -117,7 +110,9 @@ function HourlyHeatmap({ hourlyMatchingPercentage }: HourlyHeatmapProps) {
       verticalAlign: 'middle' as const,
     },
     credits: { enabled: false },
-  }), [data])
+  }), [data, maxDay, monthTicks])
+
+  if (data.length === 0) return null
 
   return (
     <div className="hourly-heatmap">

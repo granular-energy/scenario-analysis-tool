@@ -1097,6 +1097,295 @@
 }
 
 /* ============================================================
+   PROFILE CARDS
+   ============================================================ */
+.profile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.profile-card {
+  background: var(--neutral-100);
+  border: 1px solid var(--color-border);
+  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-card-name {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.profile-card-remove {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875rem;
+  background: none;
+  border: 1px solid var(--neutral-400);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.profile-card-remove:hover {
+  border-color: var(--red-700);
+  color: var(--red-700);
+}
+
+.profile-card-stats {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.profile-card-stat {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.profile-card-range {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+/* ============================================================
+   ALLOCATION MATRIX
+   ============================================================ */
+.allocation-matrix-wrap {
+  overflow-x: auto;
+}
+
+.allocation-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+}
+
+.allocation-matrix th,
+.allocation-matrix td {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.allocation-matrix th {
+  background: var(--neutral-100);
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.allocation-matrix td:first-child {
+  text-align: left;
+  font-weight: 500;
+  background: var(--neutral-100);
+  white-space: nowrap;
+}
+
+.allocation-matrix input[type="number"] {
+  width: 56px;
+  padding: 0.25rem 0.375rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  border: 1px solid var(--neutral-400);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.15s;
+}
+
+.allocation-matrix input[type="number"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.allocation-matrix input[type="number"]::-webkit-inner-spin-button,
+.allocation-matrix input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.allocation-matrix input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.allocation-sum {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.allocation-sum--over {
+  color: var(--red-700);
+}
+
+.allocation-sum--ok {
+  color: var(--color-text-muted);
+}
+
+/* ============================================================
+   SANKEY DIAGRAM
+   ============================================================ */
+.sankey-block {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 1rem 1.25rem;
+}
+
+/* ============================================================
+   DATE RANGE PICKER
+   ============================================================ */
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.date-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.date-range-field label {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.date-range-field input[type="date"] {
+  padding: 0.375rem 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  border: 1px solid var(--neutral-400);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.date-range-field input[type="date"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.date-range-sep {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  padding-top: 1rem;
+}
+
+/* ============================================================
+   RESULTS TAB
+   ============================================================ */
+.results-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.consumer-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.consumer-selector label {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.consumer-selector select {
+  padding: 0.5rem 0.625rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  border: 1px solid var(--neutral-400);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.consumer-selector select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.score-cards-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.score-card-block {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.score-card-value {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.score-card-value--secondary {
+  color: var(--neutral-600);
+  font-size: 1.75rem;
+}
+
+.score-card-label {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.results-empty {
+  padding: 2.5rem;
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.results-empty p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/* ============================================================
    RESPONSIVE — tablet (768px+)
    ============================================================ */
 @media (min-width: 768px) {

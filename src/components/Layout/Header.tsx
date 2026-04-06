@@ -1,6 +1,9 @@
+import TabBar from '../Tabs/TabBar'
+import type { PortfolioState } from '../../types'
+
 interface HeaderProps {
-  activeTab: 'builder' | 'compare'
-  onTabChange: (tab: 'builder' | 'compare') => void
+  activeTab: PortfolioState['activeTab']
+  onTabChange: (tab: PortfolioState['activeTab']) => void
 }
 
 function Header({ activeTab, onTabChange }: HeaderProps) {
@@ -14,22 +17,7 @@ function Header({ activeTab, onTabChange }: HeaderProps) {
           alt="Granular Energy"
           height="24"
         />
-        <nav className="header-nav">
-          <button
-            className={`header-tab${activeTab === 'builder' ? ' header-tab--active' : ''}`}
-            onClick={() => onTabChange('builder')}
-            type="button"
-          >
-            Builder
-          </button>
-          <button
-            className={`header-tab${activeTab === 'compare' ? ' header-tab--active' : ''}`}
-            onClick={() => onTabChange('compare')}
-            type="button"
-          >
-            Compare
-          </button>
-        </nav>
+        <TabBar activeTab={activeTab} onTabChange={onTabChange} />
       </div>
     </header>
   )
