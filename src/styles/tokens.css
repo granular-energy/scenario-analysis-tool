@@ -1,0 +1,116 @@
+/* Granular Energy design tokens. Source: process/research/design-system.md. Never hard-code these in components. */
+:root {
+  /* Teal (primary accent; the only accent colour) */
+  --ge-teal-100: #f2faf9;
+  --ge-teal-200: #e8f4f3;
+  --ge-teal-300: #e6f5f3;
+  --ge-teal-500: #94d1cc;
+  --ge-teal-700: #00988b;
+  --ge-teal-800: #03857a;
+  --ge-teal-900: #06756c;
+  --ge-teal: var(--ge-teal-700);
+  --ge-teal-hover: var(--ge-teal-800);
+  --ge-teal-pressed: var(--ge-teal-900);
+  --ge-teal-bg: var(--ge-teal-300);
+
+  /* Neutrals */
+  --ge-neutral-100: #fbfaf9;
+  --ge-neutral-200: #f2efed;
+  --ge-neutral-300: #e3e0dd;
+  --ge-neutral-400: #d2cecb;
+  --ge-neutral-500: #b8b2ad;
+  --ge-neutral-600: #897f78;
+  --ge-neutral-700: #6c6560;
+  --ge-neutral-800: #56514e;
+  --ge-neutral-900: #3d3a38;
+  --ge-neutral-1000: #2a2929;
+  --ge-white: #ffffff;
+  --ge-page-bg: var(--ge-neutral-100);
+  --ge-card-bg: var(--ge-white);
+  --ge-border: var(--ge-neutral-300);
+  --ge-text: var(--ge-neutral-800);
+  --ge-text-heading: var(--ge-neutral-1000);
+  --ge-text-muted: var(--ge-neutral-600);
+
+  /* Semantic */
+  --ge-success: #08875d;
+  --ge-success-bg: #f1f9f6;
+  --ge-warning: #b25e09;
+  --ge-warning-bg: #fff8eb;
+  --ge-error: #e02d3c;
+  --ge-error-bg: #fff6f7;
+
+  /* Domain colours (energy flows) */
+  --ge-domain-demand: #0f4974;
+  --ge-domain-supply: #1fb084;
+  --ge-domain-matched: #007f8a;
+  --ge-domain-short: #006582;
+  --ge-domain-production: #92cf64;
+  --ge-domain-unallocated: #cee7df;
+  --ge-domain-unmatched: #cfdbe3;
+
+  /* Technology colours: allocated (saturated) and excess (lighter) */
+  --ge-tech-solar: #fdcf77;
+  --ge-tech-solar-excess: #fee0a7;
+  --ge-tech-wind-onshore: #58caa1;
+  --ge-tech-wind-onshore-excess: #92ddc2;
+  --ge-tech-wind-offshore: #a6e5cf;
+  --ge-tech-wind-offshore-excess: #c5eee0;
+  --ge-tech-wind: #81d8b9;
+  --ge-tech-wind-excess: #ade6d1;
+  --ge-tech-hydro: #6ea1dd;
+  --ge-tech-hydro-excess: #a1c2e9;
+  --ge-tech-nuclear: #ab80cc;
+  --ge-tech-nuclear-excess: #c8acde;
+  --ge-tech-biomass: #57b06b;
+  --ge-tech-biomass-excess: #92cc9f;
+  --ge-tech-battery: #cbc0e9;
+  --ge-tech-battery-excess: #ddd6f1;
+  --ge-tech-geothermal: #f3a45b;
+  --ge-tech-geothermal-excess: #f7c494;
+  --ge-tech-unknown: #b3bfc9;
+  --ge-tech-unknown-excess: #ced5dc;
+
+  /* Scenario comparison series (up to 4 scenarios) */
+  --ge-series-1: #00988b;
+  --ge-series-2: #e9a23b;
+  --ge-series-3: #0f4974;
+  --ge-series-4: #ab80cc;
+
+  /* Gradient ramp for heatmaps: short → matched */
+  --ge-gradient-100: #0f4974;
+  --ge-gradient-400: #00988b;
+  --ge-gradient-900: #ffdb4c;
+
+  /* Typography */
+  --ge-font-heading: 'Space Grotesk', 'Inter', sans-serif;
+  --ge-font-body: 'Inter', system-ui, sans-serif;
+
+  /* Spacing */
+  --ge-space-xs: 8px;
+  --ge-space-sm: 16px;
+  --ge-space-md: 24px;
+  --ge-space-lg: 40px;
+  --ge-space-xl: 64px;
+  --ge-space-xxl: 96px;
+
+  /* Radius */
+  --ge-radius-sm: 4px;
+  --ge-radius-md: 8px;
+  --ge-radius-lg: 12px;
+  --ge-radius-pill: 999px;
+
+  /* Shadows */
+  --ge-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ge-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 0 3px 0 rgba(0, 0, 0, 0.15);
+  --ge-shadow-md: 0 4px 12px 0 rgba(42, 41, 41, 0.16);
+  --ge-shadow-lg: 0 8px 16px 0 rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+
+  /* Motion */
+  --ge-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ge-duration-fast: 150ms;
+
+  /* Layout */
+  --ge-content-max: 1200px;
+  --ge-gutter: 16px;
+}

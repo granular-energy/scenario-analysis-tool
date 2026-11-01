@@ -1,0 +1,23 @@
+{
+  "_comment": "Shared by the app and by revolt's golden-fixture generator. Capacity factors are typical annual values; defaults are the values pre-filled when a profile is added from the library.",
+  "consumption": [
+    { "id": "data-centre", "file": "consumption/data-centre.json", "defaultAnnualMWh": 50000 },
+    { "id": "office-temperate", "file": "consumption/office-temperate.json", "defaultAnnualMWh": 2000 },
+    { "id": "office-hot-climate", "file": "consumption/office-hot-climate.json", "defaultAnnualMWh": 2500 },
+    { "id": "factory-two-shift", "file": "consumption/factory-two-shift.json", "defaultAnnualMWh": 20000 },
+    { "id": "residential-temperate", "file": "consumption/residential-temperate.json", "defaultAnnualMWh": 5000 },
+    { "id": "residential-hot-climate", "file": "consumption/residential-hot-climate.json", "defaultAnnualMWh": 5000 },
+    { "id": "retail-shopping-centre", "file": "consumption/retail-shopping-centre.json", "defaultAnnualMWh": 8000 },
+    { "id": "hospital-24hr", "file": "consumption/hospital-24hr.json", "defaultAnnualMWh": 15000 },
+    { "id": "ev-charging-fleet", "file": "consumption/ev-charging-fleet.json", "defaultAnnualMWh": 3000 }
+  ],
+  "generation": [
+    { "id": "wind-onshore-temperate", "file": "generation/wind-onshore-temperate.json", "technology": "wind-onshore", "capacityFactor": 0.30, "defaultCapacityMW": 20 },
+    { "id": "wind-offshore", "file": "generation/wind-offshore.json", "technology": "wind-offshore", "capacityFactor": 0.42, "defaultCapacityMW": 20 },
+    { "id": "wind-onshore-nordic", "file": "generation/wind-onshore-nordic.json", "technology": "wind-onshore", "capacityFactor": 0.33, "defaultCapacityMW": 20 },
+    { "id": "solar-pv-temperate", "file": "generation/solar-pv-temperate.json", "technology": "solar", "capacityFactor": 0.11, "defaultCapacityMW": 20 },
+    { "id": "solar-pv-high-irradiance", "file": "generation/solar-pv-high-irradiance.json", "technology": "solar", "capacityFactor": 0.18, "defaultCapacityMW": 20 },
+    { "id": "hydro-run-of-river", "file": "generation/hydro-run-of-river.json", "technology": "hydro", "capacityFactor": 0.45, "defaultCapacityMW": 10 },
+    { "id": "nuclear-baseload", "file": "generation/nuclear-baseload.json", "technology": "nuclear", "capacityFactor": 0.90, "defaultCapacityMW": 10 }
+  ]
+}

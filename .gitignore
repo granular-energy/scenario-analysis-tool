@@ -1,0 +1,10 @@
+node_modules/
+dist/
+process/evals/
+EVAL.md
+STATUS
+.env
+.env.local
+test-results/
+playwright-report/
+.DS_Store
