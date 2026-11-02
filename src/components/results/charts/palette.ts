@@ -55,3 +55,19 @@ export const AXIS_LINE_COLOUR = '#CED6E9'
 
 /** Label colour (grey). */
 export const AXIS_LABEL_COLOUR = '#666666'
+
+/** Neutral text colours used for y-axis titles and Sankey data labels. */
+export const NEUTRAL_600 = '#897F78'
+export const NEUTRAL_1000 = '#2A2929'
+
+/** White (cell borders, backgrounds). */
+export const WHITE = '#FFFFFF'
+
+/** Heatmap colour-axis gradient from off-white to deep teal/navy. */
+export const HEATMAP_GRADIENT_STOPS: ReadonlyArray<[number, string]> = [
+  [0, '#FBFAF9'],
+  [0.25, '#E6F5F3'],
+  [0.5, '#94D1CC'],
+  [0.75, '#00988B'],
+  [1, '#0F4974'],
+]

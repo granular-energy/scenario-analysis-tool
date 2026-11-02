@@ -4,7 +4,7 @@
  */
 
 import type Highcharts from 'highcharts'
-import { AXIS_LABEL_COLOUR, AXIS_LINE_COLOUR, CHART_FONT_FAMILY, GRID_STYLE } from './palette'
+import { AXIS_LABEL_COLOUR, AXIS_LINE_COLOUR, CHART_FONT_FAMILY, GRID_STYLE, NEUTRAL_600 } from './palette'
 
 export const BASE_CHART_OPTIONS: Highcharts.Options = {
   chart: {
@@ -57,7 +57,7 @@ export const BASE_CHART_OPTIONS: Highcharts.Options = {
       style: {
         fontFamily: CHART_FONT_FAMILY,
         fontSize: '9px',
-        color: '#897F78',
+        color: NEUTRAL_600,
       },
     },
     labels: {

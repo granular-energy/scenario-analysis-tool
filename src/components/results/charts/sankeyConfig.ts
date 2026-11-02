@@ -12,6 +12,7 @@ import {
   DEMAND_COLOUR,
   EXCESS_COLOUR,
   MATCHED_COLOUR,
+  NEUTRAL_1000,
   UNALLOCATED_STRIPE,
   techAllocatedColour,
 } from './palette'
@@ -253,7 +254,7 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
             fontFamily: CHART_FONT_FAMILY,
             fontSize: '11px',
             fontWeight: '500',
-            color: '#2A2929',
+            color: NEUTRAL_1000,
             textOutline: 'none',
           },
         },

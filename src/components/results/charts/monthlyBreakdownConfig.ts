@@ -61,7 +61,7 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
 
   // Excess bars per generator (pastel colours)
   const excessSeries: Highcharts.SeriesOptionsType[] = input.generators
-    .filter((g) => g.monthlyExcessMWh.some((v) => v > 0))
+    .filter((g) => g.monthlyExcessMWh.some((v) => v >= 0.01))
     .map((g) => ({
       type: 'column' as const,
       name: `${g.name} excess`,

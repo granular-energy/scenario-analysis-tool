@@ -166,9 +166,11 @@ export function ResultsTab() {
         name: generatorNameMap.get(g.generatorId) ?? g.generatorId,
         technology: technologyMap.get(g.generatorId) ?? 'unknown',
         monthlyMatchedMWh: g.monthlyMatchedMWh,
-        monthlyExcessMWh: g.monthlyAllocatedMWh.map((a: number, i: number) =>
-          Math.max(0, a - g.monthlyMatchedMWh[i]),
-        ),
+        monthlyExcessMWh: g.monthlyAllocatedMWh.map((a: number, i: number) => {
+          const raw = a - g.monthlyMatchedMWh[i]
+          // Suppress floating-point noise — values below 0.01 MWh are treated as zero
+          return raw < 0.01 ? 0 : raw
+        }),
       })),
     }
     return buildMonthlyBreakdownConfig(input)

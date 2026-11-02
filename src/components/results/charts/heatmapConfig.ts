@@ -7,7 +7,7 @@
 import type Highcharts from 'highcharts'
 import { MONTH_START_HOUR, MONTH_NAMES } from '../../../engine/typicalYear'
 import type { MatchingSummary } from '../../../engine/types'
-import { CHART_FONT_FAMILY, AXIS_LABEL_COLOUR } from './palette'
+import { CHART_FONT_FAMILY, AXIS_LABEL_COLOUR, HEATMAP_GRADIENT_STOPS, WHITE } from './palette'
 
 /** Build a 12x24 matrix of average match percentages from hourlyMatchPct. */
 export function buildHeatmapMatrix(hourlyMatchPct: readonly number[]): number[][] {
@@ -73,7 +73,7 @@ export function buildHeatmapConfig(summary: MatchingSummary): Highcharts.Options
     yAxis: {
       categories: [...MONTH_NAMES],
       title: { text: undefined },
-      reversed: false,
+      reversed: true,
       gridLineWidth: 0,
       labels: {
         style: {
@@ -86,13 +86,7 @@ export function buildHeatmapConfig(summary: MatchingSummary): Highcharts.Options
     colorAxis: {
       min: 0,
       max: 100,
-      stops: [
-        [0, '#FBFAF9'],
-        [0.25, '#E6F5F3'],
-        [0.5, '#94D1CC'],
-        [0.75, '#00988B'],
-        [1, '#0F4974'],
-      ],
+      stops: [...HEATMAP_GRADIENT_STOPS],
       labels: {
         format: '{value}%',
         style: {
@@ -127,7 +121,7 @@ export function buildHeatmapConfig(summary: MatchingSummary): Highcharts.Options
         type: 'heatmap' as const,
         data,
         borderWidth: 1,
-        borderColor: '#FFFFFF',
+        borderColor: WHITE,
         dataLabels: { enabled: false },
       },
     ],
