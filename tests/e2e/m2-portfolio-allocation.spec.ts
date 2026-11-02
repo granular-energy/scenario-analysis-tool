@@ -29,7 +29,7 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
     await expect(page.locator('[data-testid="allocation-matrix"]')).toBeVisible()
 
     await page.click('[data-tab="results"]')
-    await expect(page.locator('[data-testid="results-placeholder"]')).toBeVisible()
+    await expect(page.locator('[data-testid="results-tab"]')).toBeVisible()
 
     await page.click('[data-tab="compare"]')
     await expect(page.locator('[data-testid="compare-placeholder"]')).toBeVisible()

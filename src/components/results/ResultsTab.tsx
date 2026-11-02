@@ -5,19 +5,12 @@
  */
 
 import { useMemo, useState } from 'react'
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
-
-// Highcharts modules — imported for side effects
-import HighchartsMore from 'highcharts/highcharts-more'
-import HighchartsHeatmap from 'highcharts/modules/heatmap'
-import HighchartsSankey from 'highcharts/modules/sankey'
-import HighchartsPatternFill from 'highcharts/modules/pattern-fill'
 
 import type { ConsumerResult, EngineResult, MatchingSummary } from '../../engine/types'
 import { usePortfolioContext } from '../../state/usePortfolioContext'
 import { ConsumerSelector } from './ConsumerSelector'
 import { ScoreTile } from './ScoreTile'
+import { Chart } from './Chart'
 import { granularityLabel } from './granularityLabel'
 
 import { buildAverageDayConfig, type AverageDayInput } from './charts/averageDayConfig'
@@ -31,12 +24,6 @@ import {
   type ExampleDayInput,
 } from './charts/exampleDayConfig'
 import { buildPortfolioSankey, buildConsumerSankey, buildSankeyChartConfig } from './charts/sankeyConfig'
-
-// Initialise Highcharts modules once
-;(HighchartsMore as unknown as (hc: typeof Highcharts) => void)(Highcharts)
-;(HighchartsHeatmap as unknown as (hc: typeof Highcharts) => void)(Highcharts)
-;(HighchartsSankey as unknown as (hc: typeof Highcharts) => void)(Highcharts)
-;(HighchartsPatternFill as unknown as (hc: typeof Highcharts) => void)(Highcharts)
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-GB', { maximumFractionDigits: 0 })
@@ -304,7 +291,7 @@ export function ResultsTab() {
       {avgDayConfig && (
         <div className="results-tab__chart-card content-card" data-testid="chart-average-day">
           <h3 className="results-tab__chart-title">Average 24-hour profile</h3>
-          <HighchartsReact highcharts={Highcharts} options={avgDayConfig} />
+          <Chart options={avgDayConfig} />
         </div>
       )}
 
@@ -312,7 +299,7 @@ export function ResultsTab() {
       {heatmapConfig && (
         <div className="results-tab__chart-card content-card" data-testid="chart-heatmap">
           <h3 className="results-tab__chart-title">Hourly matching heatmap</h3>
-          <HighchartsReact highcharts={Highcharts} options={heatmapConfig} />
+          <Chart options={heatmapConfig} />
         </div>
       )}
 
@@ -320,7 +307,7 @@ export function ResultsTab() {
       {monthlyConfig && (
         <div className="results-tab__chart-card content-card" data-testid="chart-monthly">
           <h3 className="results-tab__chart-title">Monthly breakdown</h3>
-          <HighchartsReact highcharts={Highcharts} options={monthlyConfig} />
+          <Chart options={monthlyConfig} />
         </div>
       )}
 
@@ -343,7 +330,7 @@ export function ResultsTab() {
               onChange={(e) => handleDateChange(e.target.value)}
             />
           </div>
-          <HighchartsReact highcharts={Highcharts} options={exampleDayConfig} />
+          <Chart options={exampleDayConfig} />
         </div>
       )}
 
@@ -355,7 +342,7 @@ export function ResultsTab() {
         >
           <h3 className="results-tab__chart-title">Energy flow</h3>
           <div className="results-tab__sankey-scroll">
-            <HighchartsReact highcharts={Highcharts} options={sankeyConfig} />
+            <Chart options={sankeyConfig} />
           </div>
         </div>
       )}
