@@ -1,59 +1,64 @@
-# Generator notes — Milestone M2
+# Generator notes — Milestone M3
 
 ## What was built
 
-### App shell (M2.1–M2.4)
-- **Header**: Granular wave logo from `public/brand/granular-wave.svg` with "Scenario Analysis Tool" in Space Grotesk.
-- **Tab bar**: Four tabs — Portfolio, Allocation, Results, Compare. Results and Compare show placeholder text "Coming soon".
-- **CTA band**: Visible on every tab, links to `https://granular-energy.com` opening in a new browser tab.
-- **Responsive**: All components use CSS from `src/styles/app.css` with relative sizing and `overflow-x: auto` on the matrix container for mobile viewports.
+### Results tab header (M3.1–M3.2)
+- **Granularity description**: plain English text derived from `engineResult.granularity` — e.g. "Hourly matching, shape preserved within each hour". Updates when the user changes granularity on the Allocation tab.
+- **Consumer selector**: dropdown with "Whole portfolio" (default) plus one entry per consumer. Switching consumers is local UI state — does not re-run the engine (M3.15).
 
-### Portfolio tab (M2.5–M2.13)
-- Two distinct **Consumers** and **Generators** panels, each with "Add from library" and "Upload CSV" buttons.
-- **Library picker** modal lists all 9 consumer profiles and all 7 generator profiles from `registry.json` by human-readable name.
-- **Consumer cards** show editable annual demand (MWh) pre-filled from `defaultAnnualMWh`.
-- **Generator cards** show editable capacity (MW) pre-filled from `defaultCapacityMW`, plus capacity factor and annual generation (MW × CF × 8,760).
-- **Sparkline** SVG shape preview on every member card (downsampled from 8,760 to ≤100 points).
-- **Remove** button on each card; removal updates the matrix and score strip.
-- **Max 5** limit enforced; add buttons disabled at the limit.
-- **CSV upload modal** with timezone selector (IANA zones, defaults UTC), unit selector (kWh/MWh/kW/MW), and preview sparkline. Uses the existing `src/io/profileUpload.ts` (not rewritten). Error messages from the IO layer (e.g. missing hours) are shown as-is.
+### Score tiles (M3.3–M3.7)
+- **Hourly matching score**: large teal-accented number, 67.33% for the demo portfolio.
+- **Annual (volumetric)**: beside the hourly tile, clearly labelled. 67.33% for the demo at hourly granularity (identical because hourly matching is the strictest).
+- **Excess MWh**: 0 MWh at hourly granularity (correct — allocation never exceeds demand in any hour).
+- **Unmatched demand**: ~16,335 MWh (≈ 50,000 × (1 − 67.33/100)).
+- Each tile has an info button (ⓘ) with a hover/click tooltip explaining the metric.
 
-### Allocation tab (M2.14–M2.18)
-- **Matrix grid** with generators as rows, consumers as columns. Each cell is an editable number input (0–100).
-- **Row totals** with visual warning (red background and ⚠ icon) when exceeding 100%.
-- **Allocate evenly** button fills equal shares (e.g. 50/50 for 2 consumers, 34/33/33 for 3).
-- **Granularity selector** with Hourly, Monthly, Annual options, each with a one-line explanation. Changing selection updates the score strip.
-- Matrix scrolls horizontally at narrow viewports via `overflow-x: auto`.
+### Five Highcharts charts (M3.8–M3.12)
+- **Chart 1 — Average 24-hour profile**: 24 x-axis points, stacked area bars by generator technology, demand spline on top, hatched unmatched region.
+- **Chart 2 — Hourly matching heatmap**: 12×24 grid (months × hours), colour intensity represents average match percentage.
+- **Chart 3 — Monthly breakdown**: 12 stacked bars (matched MWh by technology), unmatched hatched segment, monthly score line on secondary axis.
+- **Chart 4 — Example day**: date picker defaults to 1 May (day 120), 24 hourly bars with demand spline, updates when date changes.
+- **Chart 5 — Sankey**: generator → consumer → matched/excess flows, plus unallocated flows per generator. Zero excess flows at hourly granularity.
 
-### Score strip (M2.21–M2.22)
-- Persistent teal band visible on Portfolio and Allocation tabs showing "Hourly matching score" and "Annual matching score".
-- With the demo portfolio, shows **67.33 %** for both, matching the golden fixture `single-consumer-solar-wind` at hourly granularity.
+### Consumer switching (M3.13–M3.14)
+- Selecting a consumer updates all tiles and charts. With the demo's single consumer, values match the portfolio view.
+- Adding a second consumer with different allocation percentages shows different hourly scores per consumer.
 
-### State and persistence (M2.19–M2.20)
-- **localStorage** persistence via `src/state/persistence.ts`. All portfolio state (consumers, generators, sizing, matrix, granularity) is saved on every change and restored on reload.
-- **Demo portfolio** on first visit: data centre (50,000 MWh), solar PV temperate (25 MW), wind onshore temperate (10 MW), each generator 100% to the consumer, hourly granularity.
+### Empty state (M3.16)
+- When all allocation cells are 0, the Results tab shows a guidance message and no charts/tiles.
 
-### Sample CSVs (M2.23)
-- `public/samples/sample-consumption.csv` — office-like consumption (~2,000 MWh/yr).
-- `public/samples/sample-generation.csv` — solar-like generation (~1,000 MWh/yr).
-- Both have 8,760 hourly rows (2025-01-01 00:00 to 2025-12-31 23:00) in ISO naive format, UTC.
+### Design compliance (M3.17–M3.19)
+- Technology colours come from `src/components/results/charts/palette.ts` — no hard-coded hex colours in component files.
+- Chart defaults use Inter font, dotted grid lines, legend below, no top/right borders.
+- At 375px viewport width, tiles wrap to a 2×2 grid; charts resize responsively.
 
-### Tests (M2.24–M2.26)
-- **Unit tests**: `src/state/__tests__/portfolioReducer.test.ts` — 13 tests for `evenShares`, add/remove consumers and generators, allocation clamping, sizing updates, granularity switching.
-- **E2e tests**: `tests/e2e/m2-portfolio-allocation.spec.ts` — 18 Playwright specs covering all key M2 criteria.
-- `npm run typecheck`, `npm test`, `npm run lint`, and `npm run build` all pass clean.
+### Technical (M3.20–M3.23)
+- Results tab fully replaces the old "Coming soon" placeholder.
+- `npm run typecheck`, `npm test` (75 tests), `npm run lint`, and `npm run build` all pass clean.
+
+## Highcharts integration approach
+
+The standard `highcharts-react-official` package crashes in Vite 8's Rolldown bundler due to CJS interop issues (React error #130: element type is object). The fix:
+
+1. **Custom `Chart.tsx` wrapper**: uses `Highcharts.chart()` imperatively via `useEffect` + `useRef`, updating on options change and destroying on unmount. This avoids the CJS default-export interop problem.
+
+2. **Vite ESM aliases**: `vite.config.ts` maps `highcharts` and its sub-modules (`highcharts/modules/heatmap`, etc.) to their ESM source builds (`highcharts/es-modules/masters/*.src.js`) using regex `find` patterns. This ensures all modules share the same `Globals.js` singleton.
+
+3. **Side-effect imports**: `Chart.tsx` imports `highcharts/highcharts-more`, `highcharts/modules/heatmap`, `highcharts/modules/sankey`, and `highcharts/modules/pattern-fill` for side effects. The ESM versions register themselves at import time.
 
 ## What was not finished
 
-Everything in the M2 contract was implemented.
+Everything in the M3 contract was implemented. All 23 criteria are covered.
 
 ## How to test
 
-1. `npm run dev` — open `http://localhost:5173` in a browser.
-2. The demo portfolio loads automatically with the score strip showing 67.33% for both scores.
-3. Use the Portfolio tab to add/remove consumers and generators from the library or via CSV upload.
-4. Use the Allocation tab to adjust the matrix and granularity selector.
-5. Verify mobile layout at 375px viewport width.
-6. For automated verification:
+1. `npm run dev` — open `http://localhost:5173`, navigate to the Results tab.
+2. Demo portfolio: 1 consumer (Data centre, 50,000 MWh), 2 generators (Solar PV temperate 25 MW, Wind onshore temperate 10 MW), hourly granularity. Tiles should show 67.33% hourly and annual scores, 0 excess, ~16,335 unmatched.
+3. Switch consumer selector between "Whole portfolio" and "Data centre" — values match with a single consumer.
+4. Add a second consumer (e.g. Office temperate) with different allocation splits to see different per-consumer scores.
+5. Change granularity to Monthly on the Allocation tab, return to Results — granularity text and scores update.
+6. Set all allocation cells to 0 — Results shows empty state.
+7. Resize browser to 375px width — tiles wrap, charts resize, no horizontal overflow.
+8. For automated verification:
    - `npm run typecheck && npm test && npm run lint` for unit tests.
-   - `npm run build && npm run test:e2e` for Playwright e2e tests.
+   - `npm run build && npm run test:e2e` for Playwright e2e tests (16 M3 tests + 18 M2 tests).
