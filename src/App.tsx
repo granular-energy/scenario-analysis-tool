@@ -5,6 +5,7 @@ import { Header } from './components/layout/Header'
 import { ScoreStrip } from './components/layout/ScoreStrip'
 import { TabBar, type TabId } from './components/layout/TabBar'
 import { PortfolioTab } from './components/portfolio/PortfolioTab'
+import { ResultsTab } from './components/results/ResultsTab'
 import { PortfolioProvider } from './state/PortfolioContext'
 import './styles/app.css'
 
@@ -15,11 +16,7 @@ function TabContent({ tab }: { tab: TabId }) {
     case 'allocation':
       return <AllocationTab />
     case 'results':
-      return (
-        <div className="placeholder-tab" data-testid="results-placeholder">
-          <p>Results view coming soon.</p>
-        </div>
-      )
+      return <ResultsTab />
     case 'compare':
       return (
         <div className="placeholder-tab" data-testid="compare-placeholder">

@@ -644,8 +644,204 @@
   margin: 4px 0;
 }
 
+/* ---- Results tab ---- */
+.results-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ge-space-md);
+}
+
+.results-tab__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ge-space-sm);
+}
+
+.results-tab__granularity {
+  font-family: var(--ge-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ge-text-muted);
+  margin: 0;
+}
+
+.consumer-selector {
+  padding: 6px 12px;
+  border: 1px solid var(--ge-border);
+  border-radius: var(--ge-radius-sm);
+  font-family: var(--ge-font-body);
+  font-size: 14px;
+  background: var(--ge-card-bg);
+  color: var(--ge-text);
+  cursor: pointer;
+}
+
+.consumer-selector:focus {
+  outline: none;
+  border-color: var(--ge-teal);
+  box-shadow: 0 0 0 2px var(--ge-teal-100);
+}
+
+/* ---- Score tiles ---- */
+.results-tab__tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ge-space-sm);
+}
+
+.score-tile {
+  position: relative;
+  background: var(--ge-card-bg);
+  border: 1px solid var(--ge-border);
+  border-radius: var(--ge-radius-md);
+  padding: var(--ge-space-sm) var(--ge-space-md);
+  min-width: 0;
+}
+
+.score-tile__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--ge-space-xs);
+}
+
+.score-tile__label {
+  font-family: var(--ge-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ge-text-muted);
+}
+
+.score-tile__info {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ge-text-muted);
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.score-tile__info:hover {
+  color: var(--ge-teal);
+}
+
+.score-tile__tooltip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: var(--ge-space-xs);
+  right: var(--ge-space-xs);
+  z-index: 20;
+  background: var(--ge-neutral-1000);
+  color: var(--ge-white);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: var(--ge-space-xs) var(--ge-space-sm);
+  border-radius: var(--ge-radius-sm);
+  box-shadow: var(--ge-shadow-md);
+}
+
+.score-tile__value {
+  font-family: var(--ge-font-body);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ge-text-heading);
+  letter-spacing: -0.03em;
+}
+
+.score-tile__value--accent {
+  color: var(--ge-teal);
+}
+
+.score-tile__unit {
+  font-size: 16px;
+  color: var(--ge-text-muted);
+  margin-left: 4px;
+}
+
+/* ---- Chart cards ---- */
+.results-tab__chart-card {
+  /* content-card class provides bg, border, radius, padding */
+}
+
+.results-tab__chart-title {
+  font-family: var(--ge-font-body);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ge-text-heading);
+  margin: 0 0 var(--ge-space-sm) 0;
+}
+
+/* ---- Day picker ---- */
+.results-tab__day-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--ge-space-xs);
+  margin-bottom: var(--ge-space-sm);
+}
+
+.results-tab__day-picker-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ge-text-muted);
+}
+
+.results-tab__day-picker-input {
+  padding: 4px 8px;
+  border: 1px solid var(--ge-border);
+  border-radius: var(--ge-radius-sm);
+  font-family: var(--ge-font-body);
+  font-size: 14px;
+  background: var(--ge-card-bg);
+}
+
+.results-tab__day-picker-input:focus {
+  outline: none;
+  border-color: var(--ge-teal);
+}
+
+/* ---- Sankey scroll container ---- */
+.results-tab__sankey-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 300px;
+}
+
+/* ---- Results empty state ---- */
+.results-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.results-empty__card {
+  background: var(--ge-card-bg);
+  border: 1px solid var(--ge-border);
+  border-radius: var(--ge-radius-md);
+  padding: var(--ge-space-lg);
+  text-align: center;
+  max-width: 480px;
+}
+
+.results-empty__text {
+  font-size: 14px;
+  color: var(--ge-text-muted);
+  margin: 0;
+}
+
 /* ---- Responsive: mobile ---- */
 @media (max-width: 639px) {
+  .results-tab__tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .score-tile__value {
+    font-size: 22px;
+  }
+
   .app-header__title {
     font-size: 16px;
   }
