@@ -41,9 +41,15 @@ EVALUATOR_TOOLS='Read,Glob,Grep,Bash(npm *),Bash(npx *),Bash(node *),Bash(git st
 
 log() { echo "[harness $(date +%H:%M:%S)] $*"; }
 
-run_role() { # role prompt extra-args...
+run_role() { # role prompt extra-args...  (stdout is the JSON result; aborts on an API/auth error)
   local role="$1" prompt="$2"; shift 2
-  claude -p "$prompt" --agent "$role" --permission-mode dontAsk --output-format json --max-budget-usd "$BUDGET_USD" "$@"
+  local out
+  out=$(claude -p "$prompt" --agent "$role" --permission-mode dontAsk --output-format json --max-budget-usd "$BUDGET_USD" "$@")
+  echo "$out"
+  if [ "$(echo "$out" | jq -r '.is_error // false')" = "true" ]; then
+    echo "[harness] $role failed: $(echo "$out" | jq -r '.result')" >&2
+    return 1
+  fi
 }
 
 if [ "$SKIP_PLAN" -eq 0 ] || [ ! -f "$PLAN_FILE" ]; then
