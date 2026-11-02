@@ -46,6 +46,14 @@ The standard `highcharts-react-official` package crashes in Vite 8's Rolldown bu
 
 3. **Side-effect imports**: `Chart.tsx` imports `highcharts/highcharts-more`, `highcharts/modules/heatmap`, `highcharts/modules/sankey`, and `highcharts/modules/pattern-fill` for side effects. The ESM versions register themselves at import time.
 
+## Fixes from evaluator feedback (second attempt)
+
+1. **M3.9 — Heatmap yAxis order**: Set `reversed: true` on yAxis in `heatmapConfig.ts` so Jan appears at the top row and Dec at the bottom.
+
+2. **M3.10 — Excess epsilon at hourly granularity**: Added a 0.01 MWh tolerance threshold in `ResultsTab.tsx` when computing per-generator monthly excess (`raw < 0.01 ? 0 : raw`), and tightened the filter in `monthlyBreakdownConfig.ts` (`.some(v => v >= 0.01)`). At hourly granularity, no excess series appears in the chart legend or data.
+
+3. **M3.17 — Hard-coded hex colours**: Moved all hex colour literals from `heatmapConfig.ts` (6 gradient stops + border), `chartDefaults.ts` (`#897F78`), and `sankeyConfig.ts` (`#2A2929`) into `palette.ts` as named exports (`HEATMAP_GRADIENT_STOPS`, `NEUTRAL_600`, `NEUTRAL_1000`, `WHITE`). After the fix, grepping `src/components/results/` for hex codes finds them only in `palette.ts` and test files.
+
 ## What was not finished
 
 Everything in the M3 contract was implemented. All 23 criteria are covered.
