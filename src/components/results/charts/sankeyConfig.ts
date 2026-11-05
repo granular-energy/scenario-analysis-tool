@@ -260,6 +260,15 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
 
   const data = input.links.map((l) => [l.from, l.to, l.weight])
 
+  // Pre-compute each node's total outgoing weight for percentage calculations
+  const nodeTotals = new Map<string, number>()
+  for (const n of input.nodes) {
+    const outgoing = input.links.filter((l) => l.from === n.id).reduce((sum, l) => sum + l.weight, 0)
+    const incoming = input.links.filter((l) => l.to === n.id).reduce((sum, l) => sum + l.weight, 0)
+    // Use whichever is larger — generators have outgoing, outcomes have incoming
+    nodeTotals.set(n.id, Math.max(outgoing, incoming))
+  }
+
   return {
     chart: {
       backgroundColor: 'transparent',
@@ -269,8 +278,26 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
     title: { text: undefined },
     credits: { enabled: false },
     tooltip: {
-      headerFormat: '',
-      pointFormat: '{point.fromNode.name} → {point.toNode.name}: <b>{point.weight:.0f} MWh</b>',
+      useHTML: true,
+      formatter(this: Highcharts.Point): string {
+        const point = this as unknown as Record<string, unknown>
+
+        // Link tooltip: show MWh and % of source
+        if (point.fromNode && point.toNode) {
+          const fromNode = point.fromNode as { id: string; name: string }
+          const toNode = point.toNode as { id: string; name: string }
+          const weight = (point.weight as number) ?? 0
+          const sourceTotal = nodeTotals.get(fromNode.id) ?? weight
+          const pct = sourceTotal > 0 ? (weight / sourceTotal) * 100 : 0
+          return `${fromNode.name} → ${toNode.name}: <b>${Math.round(weight).toLocaleString()} MWh</b> (${pct.toFixed(1)}% of ${fromNode.name})`
+        }
+
+        // Node tooltip: show total MWh
+        const name = (point.name as string) ?? ''
+        const nodeId = (point.id as string) ?? ''
+        const total = nodeTotals.get(nodeId) ?? 0
+        return `<b>${name}</b>: ${Math.round(total).toLocaleString()} MWh`
+      },
       style: {
         fontFamily: CHART_FONT_FAMILY,
         fontSize: '12px',
