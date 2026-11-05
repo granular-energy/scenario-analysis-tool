@@ -25,7 +25,7 @@
 - **Stale node fix**: React `key={sankeyKey}` forces Highcharts to fully recreate the chart when the consumer selector changes. No duplicate labels or stale nodes.
 - **Per-consumer view**: Only that consumer's share of each generator appears. Surplus generation is omitted, with explanatory note: "Surplus generation is a portfolio-level concept…"
 - **Flow balance**: Unit test (`sankeyBalance.test.ts`) verifies that for each generator, outgoing link weights sum to its total generation MWh, at all three granularities.
-- **Tooltips and overlap**: `nodePadding: 12`, `minLinkWidth: 1`, `allowOverlap: false`, `linkOpacity: 0.5`. Tooltips on all nodes and links.
+- **Tooltips and overlap**: `nodePadding: 12`, `minLinkWidth: 1`, `allowOverlap: false`, `linkOpacity: 0.5`. Custom `tooltip.formatter` on all nodes and links: link tooltips show MWh and percentage of source (e.g. "Solar PV temperate → Data centre: 24,090 MWh (100.0% of Solar PV temperate)"); node tooltips show the node's total MWh.
 
 ### Bar chart stacking (M3b.17–M3b.18)
 - **Correct stack order**: All three bar charts (average day, monthly breakdown, example day) stack from bottom: matched per generator (technology colour) → excess per generator (pastel colour, labelled "{name} in excess") → unmatched demand (hatched pattern). Demand spline (#0F4974) drawn on top.
@@ -80,6 +80,10 @@
 - `tests/e2e/m3b-enhancements.spec.ts` — 14 new M3b e2e tests
 - `tests/e2e/m2-portfolio-allocation.spec.ts` — Updated for new generator card
 - `tests/e2e/m3-results.spec.ts` — Updated for new labels and day picker
+
+## Fix from evaluator feedback (second attempt)
+
+1. **M3b.16 — Sankey tooltip percentage missing**: Replaced the static `pointFormat` with a custom `tooltip.formatter` function. Link tooltips now compute `weight / sourceTotal * 100` and display both MWh and percentage of the source node (e.g. "Solar PV temperate → Data centre: 24,090 MWh (100.0% of Solar PV temperate)"). Node tooltips show the node's total MWh via pre-computed `nodeTotals` map. The `nodePadding`, `minLinkWidth`, and `allowOverlap` settings were already correct.
 
 ## What was not finished
 
