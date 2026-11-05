@@ -16,7 +16,7 @@ export interface PortfolioGenerator {
   readonly uid: string
   readonly profileId: string
   readonly name: string
-  readonly capacityMW: number
+  readonly annualMWh: number
   readonly capacityFactor: number
   readonly technology: string
   /** Normalised hourly shape (sum ≈ 1.0), 8 760 values. */
@@ -40,7 +40,7 @@ export type PortfolioAction =
   | { type: 'UPDATE_CONSUMER_SIZING'; uid: string; annualMWh: number }
   | { type: 'ADD_GENERATOR'; generator: PortfolioGenerator }
   | { type: 'REMOVE_GENERATOR'; uid: string }
-  | { type: 'UPDATE_GENERATOR_SIZING'; uid: string; capacityMW: number }
+  | { type: 'UPDATE_GENERATOR_SIZING'; uid: string; annualMWh: number }
   | { type: 'SET_ALLOCATION'; generatorUid: string; consumerUid: string; percent: number }
   | { type: 'ALLOCATE_EVENLY' }
   | { type: 'SET_GRANULARITY'; granularity: MatchingGranularity }

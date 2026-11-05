@@ -32,7 +32,7 @@ export function createDemoPortfolio(): PortfolioState {
         uid: solarUid,
         profileId: solarEntry.id,
         name: displayName(solarEntry.id),
-        capacityMW: 25, // non-default to match golden fixture
+        annualMWh: 24_090, // = 25 MW × 0.11 CF × 8760, matches golden fixture
         capacityFactor: solarEntry.capacityFactor,
         technology: solarEntry.technology,
         shape: loadShape(solarEntry.file),
@@ -42,7 +42,7 @@ export function createDemoPortfolio(): PortfolioState {
         uid: windUid,
         profileId: windEntry.id,
         name: displayName(windEntry.id),
-        capacityMW: 10, // non-default to match golden fixture
+        annualMWh: 26_280, // = 10 MW × 0.30 CF × 8760, matches golden fixture
         capacityFactor: windEntry.capacityFactor,
         technology: windEntry.technology,
         shape: loadShape(windEntry.file),

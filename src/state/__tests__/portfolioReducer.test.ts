@@ -18,7 +18,7 @@ function makeGenerator(uid: string, name = uid): PortfolioGenerator {
     uid,
     profileId: 'test',
     name,
-    capacityMW: 10,
+    annualMWh: 26280, // = 10 MW × 0.30 CF × 8760
     capacityFactor: 0.3,
     technology: 'wind-onshore',
     shape: new Array(8760).fill(1 / 8760),
@@ -153,9 +153,9 @@ describe('portfolioReducer', () => {
     const result = portfolioReducer(state, {
       type: 'UPDATE_GENERATOR_SIZING',
       uid: 'g1',
-      capacityMW: 30,
+      annualMWh: 50000,
     })
-    expect(result.generators[0].capacityMW).toBe(30)
+    expect(result.generators[0].annualMWh).toBe(50000)
   })
 
   it('sets granularity', () => {

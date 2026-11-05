@@ -82,7 +82,7 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
       return {
         ...state,
         generators: state.generators.map((g) =>
-          g.uid === action.uid ? { ...g, capacityMW: action.capacityMW } : g,
+          g.uid === action.uid ? { ...g, annualMWh: action.annualMWh } : g,
         ),
       }
     }

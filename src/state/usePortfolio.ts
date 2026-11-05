@@ -17,9 +17,8 @@ function scaleConsumer(c: PortfolioConsumer): Consumer {
 
 /** Scale a normalised shape to absolute MWh for a generator. */
 function scaleGenerator(g: PortfolioGenerator): Generator {
-  const annualMWh = g.capacityMW * g.capacityFactor * 8760
   const total = g.shape.reduce((a, b) => a + b, 0)
-  const generationMWh = total > 0 ? g.shape.map((v) => (v / total) * annualMWh) : g.shape.map(() => 0)
+  const generationMWh = total > 0 ? g.shape.map((v) => (v / total) * g.annualMWh) : g.shape.map(() => 0)
   return { id: g.uid, generationMWh }
 }
 

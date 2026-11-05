@@ -64,7 +64,7 @@ export function PortfolioTab() {
         uid: uid(),
         profileId: entry.id,
         name: displayName(entry.id),
-        capacityMW: entry.defaultCapacityMW,
+        annualMWh: Math.round(entry.defaultCapacityMW * entry.capacityFactor * 8760),
         capacityFactor: entry.capacityFactor,
         technology: entry.technology,
         shape: loadShape(entry.file),
@@ -98,13 +98,13 @@ export function PortfolioTab() {
       const shape = total > 0 ? hourlyMWh.map((v) => v / total) : hourlyMWh
       // Estimate capacity factor from the data: CF = total / (peakMW × 8760) but we approximate
       const peakMWh = Math.max(...hourlyMWh)
-      const capacityMW = peakMWh > 0 ? peakMWh : 1
-      const capacityFactor = total / (capacityMW * 8760)
+      const peakMW = peakMWh > 0 ? peakMWh : 1
+      const capacityFactor = total / (peakMW * 8760)
       const generator: PortfolioGenerator = {
         uid: uid(),
         profileId: `upload-${name}`,
         name,
-        capacityMW: Math.round(capacityMW * 100) / 100,
+        annualMWh: Math.round(total),
         capacityFactor: Math.round(capacityFactor * 100) / 100,
         technology: 'unknown',
         shape,
@@ -191,8 +191,8 @@ export function PortfolioTab() {
               key={g.uid}
               generator={g}
               onRemove={(uid) => dispatch({ type: 'REMOVE_GENERATOR', uid })}
-              onUpdateSizing={(uid, capacityMW) =>
-                dispatch({ type: 'UPDATE_GENERATOR_SIZING', uid, capacityMW })
+              onUpdateSizing={(uid, annualMWh) =>
+                dispatch({ type: 'UPDATE_GENERATOR_SIZING', uid, annualMWh })
               }
             />
           ))}

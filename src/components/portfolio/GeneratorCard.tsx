@@ -20,22 +20,23 @@ function formatNumber(n: number): string {
 interface GeneratorCardProps {
   generator: PortfolioGenerator
   onRemove: (uid: string) => void
-  onUpdateSizing: (uid: string, capacityMW: number) => void
+  onUpdateSizing: (uid: string, annualMWh: number) => void
 }
 
 export function GeneratorCard({ generator, onRemove, onUpdateSizing }: GeneratorCardProps) {
-  const [draft, setDraft] = useState(String(generator.capacityMW))
+  const [draft, setDraft] = useState(String(generator.annualMWh))
 
-  const annualMWh = generator.capacityMW * generator.capacityFactor * 8760
+  // Compute implied capacity from annualMWh and capacityFactor
+  const impliedMW = generator.capacityFactor > 0 ? generator.annualMWh / (generator.capacityFactor * 8760) : 0
 
   const handleBlur = useCallback(() => {
     const parsed = Number(draft.replace(/[, ]/g, ''))
     if (Number.isFinite(parsed) && parsed > 0) {
       onUpdateSizing(generator.uid, parsed)
     } else {
-      setDraft(String(generator.capacityMW))
+      setDraft(String(generator.annualMWh))
     }
-  }, [draft, generator.uid, generator.capacityMW, onUpdateSizing])
+  }, [draft, generator.uid, generator.annualMWh, onUpdateSizing])
 
   const colour = TECH_COLOURS[generator.technology] ?? 'var(--ge-teal)'
 
@@ -54,7 +55,7 @@ export function GeneratorCard({ generator, onRemove, onUpdateSizing }: Generator
       </div>
       <Sparkline shape={generator.shape} colour={colour} />
       <label className="member-card__sizing">
-        <span className="member-card__sizing-label">Capacity (MW)</span>
+        <span className="member-card__sizing-label">Annual generation (MWh)</span>
         <input
           type="text"
           inputMode="numeric"
@@ -68,9 +69,11 @@ export function GeneratorCard({ generator, onRemove, onUpdateSizing }: Generator
           data-testid="generator-sizing"
         />
       </label>
-      <div className="member-card__meta">
-        <span>CF {generator.capacityFactor.toFixed(2)}</span>
-        <span>{formatNumber(Math.round(annualMWh))} MWh/yr</span>
+      <div className="member-card__meta" data-testid="generator-capacity-hint">
+        <span>
+          ≈ {formatNumber(Math.round(impliedMW))} MW at a {generator.capacityFactor.toFixed(2)} capacity
+          factor
+        </span>
       </div>
     </div>
   )
