@@ -883,6 +883,14 @@
   border-color: var(--ge-teal);
 }
 
+/* ---- Sankey note ---- */
+.results-tab__sankey-note {
+  font-size: 13px;
+  color: var(--ge-text-muted);
+  margin: 0 0 var(--ge-space-xs) 0;
+  font-style: italic;
+}
+
 /* ---- Sankey scroll container ---- */
 .results-tab__sankey-scroll {
   overflow-x: auto;

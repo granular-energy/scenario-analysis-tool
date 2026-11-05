@@ -1,12 +1,18 @@
 /**
  * Chart 1 — Average 24-hour profile.
- * Stacked bars of per-generator allocated MWh (technology colours),
- * hatched unmatched region, and demand spline on top.
+ * Stacked bars: matched per generator (technology colours) → excess per generator
+ * (pastel colours) → hatched unmatched → demand spline on top.
  */
 
 import type Highcharts from 'highcharts'
 import type { GeneratorContribution, MatchingSummary } from '../../../engine/types'
-import { DEMAND_COLOUR, UNALLOCATED_BG, UNALLOCATED_STRIPE, techAllocatedColour } from './palette'
+import {
+  DEMAND_COLOUR,
+  UNALLOCATED_BG,
+  UNALLOCATED_STRIPE,
+  techAllocatedColour,
+  techExcessColour,
+} from './palette'
 import { mergeDefaults } from './chartDefaults'
 
 export interface AverageDaySeriesInput {
@@ -14,8 +20,10 @@ export interface AverageDaySeriesInput {
   name: string
   /** Technology key for colour lookup. */
   technology: string
-  /** 8 760-length hourly allocated MWh from GeneratorContribution. */
-  allocatedMWh: readonly number[]
+  /** 8 760-length hourly matched MWh. */
+  matchedMWh: readonly number[]
+  /** 8 760-length hourly excess MWh (allocated - matched). */
+  excessMWh: readonly number[]
 }
 
 export interface AverageDayInput {
@@ -23,12 +31,12 @@ export interface AverageDayInput {
   demandMWh: readonly number[]
   /** 8 760-length unmatched series. */
   unmatchedMWh: readonly number[]
-  /** Per-generator allocated series with technology metadata. */
+  /** Per-generator matched and excess series with technology metadata. */
   generators: readonly AverageDaySeriesInput[]
 }
 
 /** Average a specific hour-of-day across all 365 days. */
-function averageByHour(series: readonly number[]): number[] {
+export function averageByHour(series: readonly number[]): number[] {
   const result = new Array<number>(24).fill(0)
   for (let h = 0; h < 24; h++) {
     let total = 0
@@ -40,17 +48,42 @@ function averageByHour(series: readonly number[]): number[] {
   return result
 }
 
+/** Check whether a 24-element averaged series has a meaningful total. */
+function hasSignificantAvg(avgSeries: readonly number[], threshold = 0.01): boolean {
+  let total = 0
+  for (let i = 0; i < avgSeries.length; i++) {
+    total += avgSeries[i]
+  }
+  return total >= threshold
+}
+
 export function buildAverageDayConfig(input: AverageDayInput): Highcharts.Options {
   const demandAvg = averageByHour(input.demandMWh)
   const unmatchedAvg = averageByHour(input.unmatchedMWh)
 
-  const genSeries: Highcharts.SeriesOptionsType[] = input.generators.map((g) => ({
+  // Matched bars per generator (bottom of stack)
+  const matchedSeries: Highcharts.SeriesOptionsType[] = input.generators.map((g) => ({
     type: 'column' as const,
     name: g.name,
-    data: averageByHour(g.allocatedMWh),
+    data: averageByHour(g.matchedMWh),
     color: techAllocatedColour(g.technology),
     stacking: 'normal' as const,
   }))
+
+  // Excess bars per generator (pastel, above matched)
+  const excessSeries: Highcharts.SeriesOptionsType[] = input.generators
+    .map((g) => {
+      const avgExcess = averageByHour(g.excessMWh)
+      return { g, avgExcess }
+    })
+    .filter(({ avgExcess }) => hasSignificantAvg(avgExcess))
+    .map(({ g, avgExcess }) => ({
+      type: 'column' as const,
+      name: `${g.name} in excess`,
+      data: avgExcess,
+      color: techExcessColour(g.technology),
+      stacking: 'normal' as const,
+    }))
 
   // Hatched unmatched series
   const unmatchedSeries: Highcharts.SeriesOptionsType = {
@@ -91,7 +124,7 @@ export function buildAverageDayConfig(input: AverageDayInput): Highcharts.Option
     yAxis: {
       title: { text: 'MWh' },
     },
-    series: [...genSeries, unmatchedSeries, demandSeries],
+    series: [...matchedSeries, ...excessSeries, unmatchedSeries, demandSeries],
   })
 }
 
@@ -108,9 +141,8 @@ export function buildAverageDayInput(
     generators: generators.map((g) => ({
       name: nameMap.get(g.generatorId) ?? g.generatorId,
       technology: technologyMap.get(g.generatorId) ?? 'unknown',
-      allocatedMWh: g.allocatedMWh,
+      matchedMWh: g.matchedMWh,
+      excessMWh: g.allocatedMWh.map((a, i) => Math.max(0, a - g.matchedMWh[i])),
     })),
   }
 }
-
-export { averageByHour }

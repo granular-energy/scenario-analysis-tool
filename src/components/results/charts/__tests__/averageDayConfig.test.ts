@@ -34,13 +34,15 @@ describe('buildAverageDayConfig', () => {
         {
           name: 'Solar',
           technology: 'solar',
-          allocatedMWh: new Array(8760).fill(7),
+          matchedMWh: new Array(8760).fill(7),
+          excessMWh: new Array(8760).fill(0),
         },
       ],
     }
     const config = buildAverageDayConfig(input)
 
-    // Should have 3 series: 1 generator + 1 unmatched + 1 demand
+    // Should have 3 series: 1 matched generator + 1 unmatched + 1 demand
+    // (excess is omitted because total is below threshold)
     expect(config.series).toHaveLength(3)
 
     // X-axis categories should be 24 hours
@@ -58,7 +60,8 @@ describe('buildAverageDayConfig', () => {
         {
           name: 'Solar PV',
           technology: 'solar',
-          allocatedMWh: new Array(8760).fill(5),
+          matchedMWh: new Array(8760).fill(5),
+          excessMWh: new Array(8760).fill(0),
         },
       ],
     }
@@ -66,5 +69,45 @@ describe('buildAverageDayConfig', () => {
     const series = config.series as Array<{ color?: string; name?: string }>
     const solarSeries = series.find((s) => s.name === 'Solar PV')
     expect(solarSeries?.color).toBe('#FDCF77')
+  })
+
+  it('includes excess series when total exceeds threshold', () => {
+    const input: AverageDayInput = {
+      demandMWh: new Array(8760).fill(10),
+      unmatchedMWh: new Array(8760).fill(0),
+      generators: [
+        {
+          name: 'Solar PV',
+          technology: 'solar',
+          matchedMWh: new Array(8760).fill(8),
+          excessMWh: new Array(8760).fill(2),
+        },
+      ],
+    }
+    const config = buildAverageDayConfig(input)
+    const series = config.series as Array<{ name?: string; color?: string }>
+    const excessSeries = series.find((s) => s.name === 'Solar PV in excess')
+    expect(excessSeries).toBeDefined()
+    // Excess colour for solar is pastel
+    expect(excessSeries?.color).toBe('#FEE0A7')
+  })
+
+  it('omits excess series when total is below threshold', () => {
+    const input: AverageDayInput = {
+      demandMWh: new Array(8760).fill(10),
+      unmatchedMWh: new Array(8760).fill(3),
+      generators: [
+        {
+          name: 'Solar PV',
+          technology: 'solar',
+          matchedMWh: new Array(8760).fill(7),
+          excessMWh: new Array(8760).fill(0),
+        },
+      ],
+    }
+    const config = buildAverageDayConfig(input)
+    const series = config.series as Array<{ name?: string }>
+    const excessSeries = series.find((s) => s.name === 'Solar PV in excess')
+    expect(excessSeries).toBeUndefined()
   })
 })

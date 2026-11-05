@@ -1,8 +1,8 @@
 /**
- * Chart 5 — Sankey diagram.
- * Flows from each generator to each consumer (allocated MWh),
- * then from each consumer to "Matched" and "Excess",
- * plus from each generator to "Unallocated" for unused generation.
+ * Chart 5 — Sankey diagram (three-column layout).
+ * Columns: Generators (left) → Consumers (centre) → Outcomes (right).
+ * Outcome nodes: "Matched", "Excess", "Surplus generation".
+ * Surplus flows run directly from generator to Surplus node in the outcomes column.
  */
 
 import type Highcharts from 'highcharts'
@@ -21,6 +21,7 @@ export interface SankeyNode {
   id: string
   name: string
   color: string
+  column?: number
 }
 
 export interface SankeyLink {
@@ -35,7 +36,7 @@ export interface SankeyInput {
   links: readonly SankeyLink[]
 }
 
-/** Build Sankey data for the whole portfolio view. */
+/** Build Sankey data for the whole portfolio view (three-column layout). */
 export function buildPortfolioSankey(
   result: EngineResult,
   generatorNames: ReadonlyMap<string, string>,
@@ -45,33 +46,43 @@ export function buildPortfolioSankey(
   const nodes: SankeyNode[] = []
   const links: SankeyLink[] = []
 
-  // Generator nodes
+  // Column 0: Generator nodes
   for (const gen of result.generators) {
     const tech = technologyMap.get(gen.generatorId) ?? 'unknown'
     nodes.push({
       id: `gen-${gen.generatorId}`,
       name: generatorNames.get(gen.generatorId) ?? gen.generatorId,
       color: techAllocatedColour(tech),
+      column: 0,
     })
   }
 
-  // Consumer nodes
+  // Column 1: Consumer nodes
   for (const consumer of result.consumers) {
     nodes.push({
       id: `con-${consumer.consumerId}`,
       name: consumerNames.get(consumer.consumerId) ?? consumer.consumerId,
       color: DEMAND_COLOUR,
+      column: 1,
     })
   }
 
-  // Destination nodes
-  nodes.push({ id: 'matched', name: 'Matched', color: MATCHED_COLOUR })
-  nodes.push({ id: 'unallocated', name: 'Unallocated', color: UNALLOCATED_STRIPE })
+  // Column 2: Outcome nodes
+  nodes.push({ id: 'matched', name: 'Matched', color: MATCHED_COLOUR, column: 2 })
 
-  // Only add excess node if there is any excess
   const totalExcess = result.consumers.reduce((sum, c) => sum + c.totalExcessMWh, 0)
   if (totalExcess > 0.01) {
-    nodes.push({ id: 'excess', name: 'Excess', color: EXCESS_COLOUR })
+    nodes.push({ id: 'excess', name: 'Excess', color: EXCESS_COLOUR, column: 2 })
+  }
+
+  const totalSurplus = result.generators.reduce((sum, g) => sum + g.unallocatedMWh, 0)
+  if (totalSurplus > 0.01) {
+    nodes.push({
+      id: 'surplus',
+      name: 'Surplus generation',
+      color: UNALLOCATED_STRIPE,
+      column: 2,
+    })
   }
 
   // Generator → Consumer links (allocated MWh)
@@ -109,12 +120,12 @@ export function buildPortfolioSankey(
     }
   }
 
-  // Generator → Unallocated links
+  // Generator → Surplus links (directly to outcomes column, not via consumers)
   for (const gen of result.generators) {
     if (gen.unallocatedMWh > 0.01) {
       links.push({
         from: `gen-${gen.generatorId}`,
-        to: 'unallocated',
+        to: 'surplus',
         weight: Math.round(gen.unallocatedMWh * 100) / 100,
         color: UNALLOCATED_STRIPE,
       })
@@ -124,7 +135,7 @@ export function buildPortfolioSankey(
   return { nodes, links }
 }
 
-/** Build Sankey data for a single consumer view. */
+/** Build Sankey data for a single consumer view (no surplus). */
 export function buildConsumerSankey(
   consumer: ConsumerResult,
   generators: readonly GeneratorUtilisation[],
@@ -142,25 +153,30 @@ export function buildConsumerSankey(
     return alloc !== undefined && alloc > 0.01
   })
 
+  // Column 0: Generator nodes
   for (const gen of relevantGens) {
     const tech = technologyMap.get(gen.generatorId) ?? 'unknown'
     nodes.push({
       id: `gen-${gen.generatorId}`,
       name: generatorNames.get(gen.generatorId) ?? gen.generatorId,
       color: techAllocatedColour(tech),
+      column: 0,
     })
   }
 
+  // Column 1: Consumer node
   nodes.push({
     id: `con-${consumer.consumerId}`,
     name: consumerName,
     color: DEMAND_COLOUR,
+    column: 1,
   })
 
-  nodes.push({ id: 'matched', name: 'Matched', color: MATCHED_COLOUR })
+  // Column 2: Outcome nodes (no surplus — that's a portfolio-level concept)
+  nodes.push({ id: 'matched', name: 'Matched', color: MATCHED_COLOUR, column: 2 })
 
   if (consumer.totalExcessMWh > 0.01) {
-    nodes.push({ id: 'excess', name: 'Excess', color: EXCESS_COLOUR })
+    nodes.push({ id: 'excess', name: 'Excess', color: EXCESS_COLOUR, column: 2 })
   }
 
   // Generator → Consumer
@@ -197,23 +213,41 @@ export function buildConsumerSankey(
     })
   }
 
-  // Generator → Unallocated (show the full generator's unallocated, not just this consumer's share)
-  for (const gen of relevantGens) {
-    if (gen.unallocatedMWh > 0.01) {
-      // Only add unallocated node once
-      if (!nodes.some((n) => n.id === 'unallocated')) {
-        nodes.push({ id: 'unallocated', name: 'Unallocated', color: UNALLOCATED_STRIPE })
-      }
-      links.push({
-        from: `gen-${gen.generatorId}`,
-        to: 'unallocated',
-        weight: Math.round(gen.unallocatedMWh * 100) / 100,
-        color: UNALLOCATED_STRIPE,
-      })
+  return { nodes, links }
+}
+
+/**
+ * Assert that Sankey flows balance: for each generator, the sum of outgoing
+ * link weights equals its total generation MWh; for each consumer, ingoing
+ * equals outgoing. Returns an array of error messages (empty if balanced).
+ */
+export function checkSankeyBalance(
+  input: SankeyInput,
+  generatorTotals: ReadonlyMap<string, number>,
+): string[] {
+  const errors: string[] = []
+
+  // Check generator outgoing totals
+  for (const [genNodeId, expectedTotal] of generatorTotals.entries()) {
+    const outgoing = input.links.filter((l) => l.from === genNodeId).reduce((sum, l) => sum + l.weight, 0)
+    if (Math.abs(outgoing - expectedTotal) > 0.5) {
+      errors.push(
+        `Generator ${genNodeId}: outgoing ${outgoing.toFixed(1)} ≠ total ${expectedTotal.toFixed(1)}`,
+      )
     }
   }
 
-  return { nodes, links }
+  // Check consumer flow-through balance (ingoing = outgoing)
+  const consumerNodeIds = input.nodes.filter((n) => n.id.startsWith('con-')).map((n) => n.id)
+  for (const nodeId of consumerNodeIds) {
+    const ingoing = input.links.filter((l) => l.to === nodeId).reduce((sum, l) => sum + l.weight, 0)
+    const outgoing = input.links.filter((l) => l.from === nodeId).reduce((sum, l) => sum + l.weight, 0)
+    if (Math.abs(ingoing - outgoing) > 0.5) {
+      errors.push(`Consumer ${nodeId}: ingoing ${ingoing.toFixed(1)} ≠ outgoing ${outgoing.toFixed(1)}`)
+    }
+  }
+
+  return errors
 }
 
 export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
@@ -221,6 +255,7 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
     id: n.id,
     name: n.name,
     color: n.color,
+    column: n.column,
   }))
 
   const data = input.links.map((l) => [l.from, l.to, l.weight])
@@ -235,12 +270,12 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
     credits: { enabled: false },
     tooltip: {
       headerFormat: '',
-      pointFormat: '{point.fromNode.name} \u2192 {point.toNode.name}: <b>{point.weight:.0f} MWh</b>',
+      pointFormat: '{point.fromNode.name} → {point.toNode.name}: <b>{point.weight:.0f} MWh</b>',
       style: {
         fontFamily: CHART_FONT_FAMILY,
         fontSize: '12px',
       },
-    },
+    } as Highcharts.TooltipOptions,
     series: [
       {
         type: 'sankey' as const,
@@ -248,21 +283,32 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
         keys: ['from', 'to', 'weight'],
         data,
         nodes: nodeMap,
-        dataLabels: {
-          enabled: true,
-          style: {
-            fontFamily: CHART_FONT_FAMILY,
-            fontSize: '11px',
-            fontWeight: '500',
-            color: NEUTRAL_1000,
-            textOutline: 'none',
+        dataLabels: [
+          {
+            enabled: true,
+            nodeFormatter: undefined,
+            style: {
+              fontFamily: CHART_FONT_FAMILY,
+              fontSize: '11px',
+              fontWeight: '500',
+              color: NEUTRAL_1000,
+              textOutline: 'none',
+            },
           },
-        },
+        ],
+        linkOpacity: 0.5,
         nodeWidth: 20,
-      },
+        nodePadding: 12,
+        minLinkWidth: 1,
+      } as Highcharts.SeriesSankeyOptions,
     ],
     plotOptions: {
       series: { animation: false },
+      sankey: {
+        dataLabels: {
+          allowOverlap: false,
+        },
+      },
     },
   }
 }

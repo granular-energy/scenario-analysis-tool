@@ -1,14 +1,19 @@
 /**
  * Chart 3 — Monthly breakdown.
- * 12 x-axis categories (Jan–Dec). Stacked bars of matched MWh by generator
- * (technology colours), plus excess and unmatched segments, with a monthly
- * matching score line on a secondary y-axis (0–100 %).
+ * 12 x-axis categories (Jan–Dec). Stacked bars: matched per generator (technology
+ * colours) → excess per generator (pastel) → unmatched (hatched). Demand spline
+ * (monthly score line) on secondary y-axis (0–100 %).
  */
 
 import type Highcharts from 'highcharts'
 import { MONTH_NAMES } from '../../../engine/typicalYear'
 import {
+  AXIS_LABEL_COLOUR,
+  AXIS_LINE_COLOUR,
+  CHART_FONT_FAMILY,
   DEMAND_COLOUR,
+  GRID_STYLE,
+  NEUTRAL_600,
   UNALLOCATED_BG,
   UNALLOCATED_STRIPE,
   techAllocatedColour,
@@ -31,7 +36,7 @@ export interface MonthlyBreakdownInput {
 }
 
 export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highcharts.Options {
-  // Matched bars per generator (stacked, technology colours)
+  // Matched bars per generator (bottom of stack, technology colours)
   const matchedSeries: Highcharts.SeriesOptionsType[] = input.generators.map((g) => ({
     type: 'column' as const,
     name: g.name,
@@ -41,7 +46,19 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
     yAxis: 0,
   }))
 
-  // Unmatched (hatched)
+  // Excess bars per generator (pastel colours, above matched)
+  const excessSeries: Highcharts.SeriesOptionsType[] = input.generators
+    .filter((g) => g.monthlyExcessMWh.some((v) => v >= 0.01))
+    .map((g) => ({
+      type: 'column' as const,
+      name: `${g.name} in excess`,
+      data: [...g.monthlyExcessMWh],
+      color: techExcessColour(g.technology),
+      stacking: 'normal' as const,
+      yAxis: 0,
+    }))
+
+  // Unmatched (hatched, above excess)
   const unmatchedSeries: Highcharts.SeriesOptionsType = {
     type: 'column' as const,
     name: 'Unmatched',
@@ -59,18 +76,6 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
     yAxis: 0,
   }
 
-  // Excess bars per generator (pastel colours)
-  const excessSeries: Highcharts.SeriesOptionsType[] = input.generators
-    .filter((g) => g.monthlyExcessMWh.some((v) => v >= 0.01))
-    .map((g) => ({
-      type: 'column' as const,
-      name: `${g.name} excess`,
-      data: [...g.monthlyExcessMWh],
-      color: techExcessColour(g.technology),
-      stacking: 'normal' as const,
-      yAxis: 0,
-    }))
-
   // Monthly score line on secondary axis
   const scoreSeries: Highcharts.SeriesOptionsType = {
     type: 'spline' as const,
@@ -83,6 +88,13 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
     zIndex: 10,
   }
 
+  // Y-axis title styling matching the design system: horizontal, at top
+  const yAxisTitleStyle = {
+    fontFamily: CHART_FONT_FAMILY,
+    fontSize: '9px',
+    color: NEUTRAL_600,
+  }
+
   return mergeDefaults({
     xAxis: {
       categories: [...MONTH_NAMES],
@@ -90,17 +102,48 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
     },
     yAxis: [
       {
-        title: { text: 'MWh' },
+        ...GRID_STYLE,
+        lineColor: AXIS_LINE_COLOUR,
+        lineWidth: 1,
+        title: {
+          text: 'MWh',
+          align: 'high' as const,
+          rotation: 0,
+          offset: 13,
+          y: -10,
+          style: yAxisTitleStyle,
+        },
+        labels: {
+          style: {
+            fontFamily: CHART_FONT_FAMILY,
+            fontSize: '11px',
+            color: AXIS_LABEL_COLOUR,
+          },
+        },
         min: 0,
       },
       {
-        title: { text: '%' },
+        title: {
+          text: '%',
+          align: 'high' as const,
+          rotation: 0,
+          offset: 13,
+          y: -10,
+          style: yAxisTitleStyle,
+        },
+        labels: {
+          style: {
+            fontFamily: CHART_FONT_FAMILY,
+            fontSize: '11px',
+            color: AXIS_LABEL_COLOUR,
+          },
+        },
         min: 0,
         max: 100,
         opposite: true,
         gridLineWidth: 0,
       },
     ],
-    series: [...matchedSeries, unmatchedSeries, ...excessSeries, scoreSeries],
+    series: [...matchedSeries, ...excessSeries, unmatchedSeries, scoreSeries],
   })
 }

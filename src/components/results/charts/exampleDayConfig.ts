@@ -1,18 +1,26 @@
 /**
  * Chart 4 — Example day picker.
- * 24 hourly bars of allocated energy by generator (technology colours)
- * with demand spline on top.
+ * 24 hourly bars: matched per generator (technology colours) → excess per generator
+ * (pastel) → hatched unmatched → demand spline on top.
  */
 
 import type Highcharts from 'highcharts'
-import { DEMAND_COLOUR, UNALLOCATED_BG, UNALLOCATED_STRIPE, techAllocatedColour } from './palette'
+import {
+  DEMAND_COLOUR,
+  UNALLOCATED_BG,
+  UNALLOCATED_STRIPE,
+  techAllocatedColour,
+  techExcessColour,
+} from './palette'
 import { mergeDefaults } from './chartDefaults'
 
 export interface ExampleDayGeneratorInput {
   name: string
   technology: string
-  /** 8 760 length hourly allocated MWh. */
-  allocatedMWh: readonly number[]
+  /** 8 760-length hourly matched MWh. */
+  matchedMWh: readonly number[]
+  /** 8 760-length hourly excess MWh. */
+  excessMWh: readonly number[]
 }
 
 export interface ExampleDayInput {
@@ -29,17 +37,42 @@ export function sliceDay(series: readonly number[], dayIndex: number): number[] 
   return series.slice(start, start + 24) as number[]
 }
 
+/** Check whether a 24-element day slice has a meaningful total. */
+function hasSignificantDay(daySlice: readonly number[], threshold = 0.01): boolean {
+  let total = 0
+  for (let i = 0; i < daySlice.length; i++) {
+    total += daySlice[i]
+  }
+  return total >= threshold
+}
+
 export function buildExampleDayConfig(input: ExampleDayInput): Highcharts.Options {
   const demandDay = sliceDay(input.demandMWh, input.dayIndex)
   const unmatchedDay = sliceDay(input.unmatchedMWh, input.dayIndex)
 
-  const genSeries: Highcharts.SeriesOptionsType[] = input.generators.map((g) => ({
+  // Matched bars per generator (bottom of stack)
+  const matchedSeries: Highcharts.SeriesOptionsType[] = input.generators.map((g) => ({
     type: 'column' as const,
     name: g.name,
-    data: sliceDay(g.allocatedMWh, input.dayIndex),
+    data: sliceDay(g.matchedMWh, input.dayIndex),
     color: techAllocatedColour(g.technology),
     stacking: 'normal' as const,
   }))
+
+  // Excess bars per generator (pastel, above matched)
+  const excessSeries: Highcharts.SeriesOptionsType[] = input.generators
+    .map((g) => {
+      const excessDay = sliceDay(g.excessMWh, input.dayIndex)
+      return { g, excessDay }
+    })
+    .filter(({ excessDay }) => hasSignificantDay(excessDay))
+    .map(({ g, excessDay }) => ({
+      type: 'column' as const,
+      name: `${g.name} in excess`,
+      data: excessDay,
+      color: techExcessColour(g.technology),
+      stacking: 'normal' as const,
+    }))
 
   const unmatchedSeries: Highcharts.SeriesOptionsType = {
     type: 'column' as const,
@@ -77,7 +110,7 @@ export function buildExampleDayConfig(input: ExampleDayInput): Highcharts.Option
     yAxis: {
       title: { text: 'MWh' },
     },
-    series: [...genSeries, unmatchedSeries, demandSeries],
+    series: [...matchedSeries, ...excessSeries, unmatchedSeries, demandSeries],
   })
 }
 

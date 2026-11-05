@@ -19,7 +19,6 @@ import { buildMonthlyBreakdownConfig, type MonthlyBreakdownInput } from './chart
 import {
   buildExampleDayConfig,
   DEFAULT_DAY_INDEX,
-  dateToDayIndex,
   dayIndexToDate,
   type ExampleDayInput,
 } from './charts/exampleDayConfig'
@@ -28,6 +27,38 @@ import { buildPortfolioSankey, buildConsumerSankey, buildSankeyChartConfig } fro
 function formatNumber(n: number): string {
   return n.toLocaleString('en-GB', { maximumFractionDigits: 0 })
 }
+
+const MONTH_LABELS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
+
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+/** Build the options for the example-day picker: all 365 days as "d Month". */
+function buildDayOptions(): { label: string; dayIndex: number }[] {
+  const options: { label: string; dayIndex: number }[] = []
+  let idx = 0
+  for (let m = 0; m < 12; m++) {
+    for (let d = 1; d <= DAYS_IN_MONTH[m]; d++) {
+      options.push({ label: `${d} ${MONTH_LABELS[m]}`, dayIndex: idx })
+      idx++
+    }
+  }
+  return options
+}
+
+const DAY_OPTIONS = buildDayOptions()
 
 interface AggregatedGen {
   generatorId: string
@@ -104,6 +135,16 @@ function resolveView(
   }
 }
 
+/** Compute per-generator hourly excess: excess(h) = allocated(h) - matched(h), floored at 0. */
+function computeHourlyExcess(allocatedMWh: readonly number[], matchedMWh: readonly number[]): number[] {
+  const excess = new Array<number>(8760)
+  for (let i = 0; i < 8760; i++) {
+    const raw = allocatedMWh[i] - matchedMWh[i]
+    excess[i] = raw < 0 ? 0 : raw
+  }
+  return excess
+}
+
 export function ResultsTab() {
   const { state, engineResult } = usePortfolioContext()
   const [selectedConsumerId, setSelectedConsumerId] = useState<string | null>(null)
@@ -121,7 +162,11 @@ export function ResultsTab() {
     for (const c of state.consumers) {
       conNameMap.set(c.uid, c.name)
     }
-    return { technologyMap: techMap, generatorNameMap: genNameMap, consumerNameMap: conNameMap }
+    return {
+      technologyMap: techMap,
+      generatorNameMap: genNameMap,
+      consumerNameMap: conNameMap,
+    }
   }, [state.generators, state.consumers])
 
   // Resolve current view data — always called, never conditional
@@ -138,20 +183,29 @@ export function ResultsTab() {
     return aggregatePortfolioGenerators(engineResult)
   }, [engineResult, consumerResult])
 
+  // Pre-compute per-generator excess series (used in avg day, example day, monthly)
+  const generatorExcessSeries = useMemo(() => {
+    return aggregatedGenerators.map((g) => ({
+      generatorId: g.generatorId,
+      excessMWh: computeHourlyExcess(g.allocatedMWh, g.matchedMWh),
+    }))
+  }, [aggregatedGenerators])
+
   // Chart 1 — Average day
   const avgDayConfig = useMemo(() => {
     if (!summary) return null
     const input: AverageDayInput = {
       demandMWh: summary.demandMWh,
       unmatchedMWh: summary.unmatchedMWh,
-      generators: aggregatedGenerators.map((g) => ({
+      generators: aggregatedGenerators.map((g, i) => ({
         name: generatorNameMap.get(g.generatorId) ?? g.generatorId,
         technology: technologyMap.get(g.generatorId) ?? 'unknown',
-        allocatedMWh: g.allocatedMWh,
+        matchedMWh: g.matchedMWh,
+        excessMWh: generatorExcessSeries[i].excessMWh,
       })),
     }
     return buildAverageDayConfig(input)
-  }, [summary, aggregatedGenerators, generatorNameMap, technologyMap])
+  }, [summary, aggregatedGenerators, generatorExcessSeries, generatorNameMap, technologyMap])
 
   // Chart 2 — Heatmap
   const heatmapConfig = useMemo(() => (summary ? buildHeatmapConfig(summary) : null), [summary])
@@ -183,16 +237,18 @@ export function ResultsTab() {
       dayIndex,
       demandMWh: summary.demandMWh,
       unmatchedMWh: summary.unmatchedMWh,
-      generators: aggregatedGenerators.map((g) => ({
+      generators: aggregatedGenerators.map((g, i) => ({
         name: generatorNameMap.get(g.generatorId) ?? g.generatorId,
         technology: technologyMap.get(g.generatorId) ?? 'unknown',
-        allocatedMWh: g.allocatedMWh,
+        matchedMWh: g.matchedMWh,
+        excessMWh: generatorExcessSeries[i].excessMWh,
       })),
     }
     return buildExampleDayConfig(input)
-  }, [summary, aggregatedGenerators, generatorNameMap, technologyMap, dayIndex])
+  }, [summary, aggregatedGenerators, generatorExcessSeries, generatorNameMap, technologyMap, dayIndex])
 
-  // Chart 5 — Sankey
+  // Chart 5 — Sankey (use a stable key to force re-creation on consumer change)
+  const sankeyKey = selectedConsumerId ?? '__portfolio__'
   const sankeyConfig = useMemo(() => {
     if (!engineResult) return null
     if (consumerResult) {
@@ -222,23 +278,9 @@ export function ResultsTab() {
     )
   }
 
-  // Day picker date string
+  // Day picker label (day and month only, no year)
   const dayDate = dayIndexToDate(dayIndex)
-  const dateValue = `2024-${String(dayDate.month).padStart(2, '0')}-${String(dayDate.day).padStart(2, '0')}`
-
-  const handleDateChange = (value: string) => {
-    const parts = value.split('-')
-    if (parts.length === 3) {
-      const month = parseInt(parts[1], 10)
-      const day = parseInt(parts[2], 10)
-      if (month >= 1 && month <= 12 && day >= 1) {
-        const newIndex = dateToDayIndex(month, day)
-        if (newIndex >= 0 && newIndex < 365) {
-          setDayIndex(newIndex)
-        }
-      }
-    }
-  }
+  const dayLabel = `${dayDate.day} ${MONTH_LABELS[dayDate.month - 1]}`
 
   const consumerOptions = state.consumers.map((c) => ({ id: c.uid, name: c.name }))
 
@@ -316,21 +358,24 @@ export function ResultsTab() {
       {/* Chart 4 — Example day */}
       {exampleDayConfig && (
         <div className="results-tab__chart-card content-card" data-testid="chart-example-day">
-          <h3 className="results-tab__chart-title">Example day</h3>
+          <h3 className="results-tab__chart-title">Example day — {dayLabel}</h3>
           <div className="results-tab__day-picker">
             <label className="results-tab__day-picker-label" htmlFor="day-picker">
-              Select date:
+              Select day:
             </label>
-            <input
+            <select
               id="day-picker"
-              type="date"
               className="results-tab__day-picker-input"
-              value={dateValue}
-              min="2024-01-01"
-              max="2024-12-30"
+              value={dayIndex}
               data-testid="day-picker"
-              onChange={(e) => handleDateChange(e.target.value)}
-            />
+              onChange={(e) => setDayIndex(Number(e.target.value))}
+            >
+              {DAY_OPTIONS.map((opt) => (
+                <option key={opt.dayIndex} value={opt.dayIndex}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
           <Chart options={exampleDayConfig} />
         </div>
@@ -343,8 +388,13 @@ export function ResultsTab() {
           data-testid="chart-sankey"
         >
           <h3 className="results-tab__chart-title">Energy flow</h3>
+          {consumerResult && (
+            <p className="results-tab__sankey-note" data-testid="sankey-surplus-note">
+              Surplus generation is a portfolio-level concept and is not shown in the per-consumer view.
+            </p>
+          )}
           <div className="results-tab__sankey-scroll">
-            <Chart options={sankeyConfig} />
+            <Chart key={sankeyKey} options={sankeyConfig} />
           </div>
         </div>
       )}
