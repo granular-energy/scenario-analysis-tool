@@ -20,11 +20,11 @@ Changes requested by Toby after reviewing M2 and M3 on 5 Nov 2026, plus the open
 
 Each method aims for 100 % matching at its own resolution; the hourly score then shows what is left when you look hour by hour. Replace the one-liners with a short panel per option. Copy (edit for fit, keep the meaning):
 
-- **Hourly** — Aims for 100 % matching in every hour. Allocation in each hour is capped at that hour's consumption, so there is never over-allocation. The hourly and annual scores are the same number. This is 24/7 hourly matching, the strictest standard.
-- **Monthly** — Aims for 100 % matching in every calendar month, as close as supply allows. Allocation in each month is capped at that month's consumption and keeps the generator's own hourly shape, so within the month some hours are over-supplied (excess) and others fall short. The hourly score shows how much of a 100 %-monthly-matched position holds hour by hour.
-- **Annual** — Aims for 100 % matching over the whole year, as with annual certificates (GoOs, REGOs). Allocation is capped at annual consumption and keeps the generator's shape. The annual score can reach 100 % while the hourly score shows how much of that claim holds hour by hour.
+- **Hourly matching only** (option label; internal value stays `hourly`) — Aims for 100 % matching in every hour. Allocation in each hour is capped at that hour's consumption, so there is never over-allocation. The hourly and annual scores are the same number. This is 24/7 hourly matching, the strictest standard.
+- **Monthly matching target** (internal value `monthly`) — Aims for 100 % matching in every calendar month, as close as supply allows. Allocation in each month is capped at that month's consumption and keeps the generator's own hourly shape, so within the month some hours are over-supplied (excess) and others fall short. The hourly score shows how much of a 100 %-monthly-matched position holds hour by hour.
+- **Annual matching target** (internal value `annual`) — Aims for 100 % matching over the whole year, as with annual certificates (GoOs, REGOs). Allocation is capped at annual consumption and keeps the generator's shape. The annual score can reach 100 % while the hourly score shows how much of that claim holds hour by hour.
 
-Add one sentence above the options: "In every method, generation is allocated to each consumer largest generator first, up to the consumer's consumption in the matching window, keeping each generator's hourly shape. This is how the Granular platform allocates." Keep the Results header line that names the chosen method.
+Add one sentence above the options: "In every method, generation is allocated to each consumer largest generator first, up to the consumer's consumption in the matching window, keeping each generator's hourly shape. This is how the Granular platform allocates." The option labels are exactly "Hourly matching only", "Monthly matching target" and "Annual matching target", and the same labels are used wherever the method is named (Results header, score strip tooltip, later reports).
 
 ## 4. Sankey: fix and make it make sense
 
