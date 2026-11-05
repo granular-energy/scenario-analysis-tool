@@ -76,6 +76,26 @@ describe('allocateToConsumer', () => {
     expect(smallAlloc[0]).toBeCloseTo(((87600 - 70080) / 35040) * 4, 9)
   })
 
+  it('as-produced assigns full supply with no cap at demand', () => {
+    const demand = flat(10)
+    const supply = flat(30)
+    const [allocated] = allocateToConsumer(demand, [{ generatorId: 'g', supplyMWh: supply }], 'as-produced')
+    // No capping: every hour gets the full supply (30), even though demand is only 10
+    expect(allocated[0]).toBe(30)
+    expect(allocated[100]).toBe(30)
+    const total = allocated.reduce((a, b) => a + b, 0)
+    expect(total).toBeCloseTo(30 * HOURS_PER_YEAR, 6)
+  })
+
+  it('as-produced with daytime supply follows supply shape', () => {
+    const demand = flat(10)
+    const supply = daytime(20)
+    const [allocated] = allocateToConsumer(demand, [{ generatorId: 'g', supplyMWh: supply }], 'as-produced')
+    // Full supply is allocated: 20 during daytime, 0 at night
+    expect(allocated[8]).toBe(20)
+    expect(allocated[0]).toBe(0)
+  })
+
   it('ignores negligible supply', () => {
     const [allocated] = allocateToConsumer(
       flat(10),
@@ -124,6 +144,23 @@ describe('runEngine', () => {
     expect(a.totalExcessMWh).toBeCloseTo(20 * 8 * 365, 3)
     expect(a.totalUnmatchedMWh).toBeCloseTo(10 * 16 * 365, 3)
     expect(a.generators[0].totalMatchedMWh).toBeCloseTo(a.totalMatchedMWh, 6)
+  })
+
+  it('as-produced shows excess when supply exceeds demand', () => {
+    const result = runEngine({
+      consumers: [{ id: 'a', demandMWh: flat(10) }],
+      generators: [{ id: 'g', generationMWh: flat(30) }],
+      matrix: { g: { a: 100 } },
+      granularity: 'as-produced',
+    })
+    const a = result.consumers[0]
+    // Full 30 MWh/h allocated → 10 matched, 20 excess per hour
+    expect(a.totalAllocatedMWh).toBeCloseTo(30 * HOURS_PER_YEAR, 3)
+    expect(a.totalMatchedMWh).toBeCloseTo(10 * HOURS_PER_YEAR, 3)
+    expect(a.totalExcessMWh).toBeCloseTo(20 * HOURS_PER_YEAR, 3)
+    expect(a.totalUnmatchedMWh).toBeCloseTo(0, 6)
+    expect(a.hourlyScore).toBeCloseTo(100, 9)
+    expect(a.annualScore).toBeCloseTo(300, 9) // 30/10 × 100 = 300%
   })
 
   it('handles a consumer with no allocated generators', () => {

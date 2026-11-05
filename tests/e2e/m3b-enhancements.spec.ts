@@ -183,37 +183,42 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
     await expect(intro).toContainText('In every method, generation is allocated to each consumer')
     await expect(intro).toContainText('Granular platform allocates')
 
-    // Check exact labels
+    // Check exact labels (four options since M3c added "As produced (no cap)")
     const labels = page.locator('.granularity-selector__label')
     await expect(labels.nth(0)).toHaveText('Hourly matching only')
     await expect(labels.nth(1)).toHaveText('Monthly matching target')
     await expect(labels.nth(2)).toHaveText('Annual matching target')
+    await expect(labels.nth(3)).toHaveText('As produced (no cap)')
 
     // Each should have a description paragraph
     const descs = page.locator('.granularity-selector__desc')
-    expect(await descs.count()).toBe(3)
-    for (let i = 0; i < 3; i++) {
+    expect(await descs.count()).toBe(4)
+    for (let i = 0; i < 4; i++) {
       const text = await descs.nth(i).textContent()
       expect(text!.length).toBeGreaterThan(50)
     }
   })
 
-  test('M3b.11 Results header uses full granularity label', async ({ page }) => {
+  test('M3b.11 Results header uses full granularity label with method context', async ({ page }) => {
     await page.click('[data-tab="results"]')
     const granularity = page.locator('[data-testid="results-granularity"]')
-    await expect(granularity).toHaveText('Hourly matching only')
+    // M3c: header now shows label · cap rule · shape rule
+    await expect(granularity).toContainText('Hourly matching only')
+    await expect(granularity).toContainText('capped at hourly consumption')
 
     // Switch to monthly
     await page.click('[data-tab="allocation"]')
     await page.click('input[value="monthly"]')
     await page.click('[data-tab="results"]')
-    await expect(granularity).toHaveText('Monthly matching target')
+    await expect(granularity).toContainText('Monthly matching target')
+    await expect(granularity).toContainText('generator shape preserved')
 
     // Switch to annual
     await page.click('[data-tab="allocation"]')
     await page.click('input[value="annual"]')
     await page.click('[data-tab="results"]')
-    await expect(granularity).toHaveText('Annual matching target')
+    await expect(granularity).toContainText('Annual matching target')
+    await expect(granularity).toContainText('generator shape preserved')
   })
 
   // ---- Sankey chart ----
