@@ -948,4 +948,71 @@
     width: 48px;
     font-size: 13px;
   }
+
+  /* M3b.23 — Generator card sizing and hint at 375px */
+  .member-card__sizing-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .member-card__meta {
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+
+  /* M3b.23 — Allocation matrix scrollable at 375px */
+  .matrix-scroll {
+    max-width: calc(100vw - 2 * var(--ge-gutter));
+  }
+
+  .matrix-table__col-header,
+  .matrix-table__row-header {
+    font-size: 12px;
+  }
+
+  .matrix-table__header-mwh {
+    font-size: 10px;
+  }
+
+  .matrix-table__cell-computed {
+    font-size: 10px;
+  }
+
+  .matrix-mode-toggle {
+    flex-wrap: wrap;
+  }
+
+  /* M3b.23 — Granularity selector readable at 375px */
+  .granularity-selector__intro {
+    font-size: 12px;
+  }
+
+  .granularity-selector__option {
+    padding: var(--ge-space-xs);
+  }
+
+  .granularity-selector__label {
+    font-size: 13px;
+    min-width: unset;
+  }
+
+  .granularity-selector__desc {
+    font-size: 12px;
+  }
+
+  /* M3b.23 — Sankey scrollable at 375px */
+  .results-tab__sankey-scroll {
+    max-width: calc(100vw - 2 * var(--ge-gutter));
+    min-height: 250px;
+  }
+
+  /* Day picker wrapping */
+  .results-tab__day-picker {
+    flex-wrap: wrap;
+  }
+
+  .results-tab__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
