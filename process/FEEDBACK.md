@@ -36,3 +36,9 @@ Format:
 - Milestone: M3 (fix in M5)
 - Severity: low
 - Description: The chart style guide calls for a horizontal unit label at the top of the y-axis. The monthly breakdown chart has "MWh" rotated along the axis; the other charts are correct.
+
+## Review on 5 Nov 2026 (Toby) — handled as milestone M3b
+- Date: 2026-11-05
+- Milestone: M3b
+- Severity: high
+- Description: (1) size generators by annual MWh, not MW; (2) allocation matrix must show each generator's annual MWh and each consumer's annual MWh, accept % or MWh per cell, and show the computed other value and totals; (3) matching granularity options need real explanations of constraint and result; (4) Sankey has duplicated labels and stale nodes when switching consumer, "Unallocated" is in the wrong column and does not balance in the per-consumer view. Full brief in process/plans/BRIEF-M3b.md.
