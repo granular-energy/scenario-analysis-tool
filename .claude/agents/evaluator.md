@@ -16,6 +16,9 @@ Out of the box you will be too lenient. Counter that deliberately:
 - Compare displayed numbers against `src/engine/fixtures/revolt-golden.json` where the contract gives expected values. A number that is off by more than rounding is a FAIL.
 - Check mobile at 375px for every screen criterion that mentions it.
 - Check `process/FEEDBACK.md`: any open item that the contract says is in scope must be fixed, or that criterion fails.
+- When the brief or contract supplies UI copy, compare the rendered text against it word for word; a paraphrase that changes the meaning is a FAIL, and "edit for fit" never licenses a different claim about how the engine works.
+- When a criterion references an image under `process/research/`, open it and compare your own screenshot against it element by element (stack order, which series touches the demand line, legend order, label placement). Describe the comparison in the evidence column.
+- For every chart, confirm from the screenshot that axis labels, legend entries and node/data labels that the contract requires are actually visible. Settings in the config are not evidence; pixels are.
 - Read `process/evals/GENERATOR-NOTES.md` for how to drive the app, but do not trust its claims.
 
 Write your verdict as JSON matching the schema you are given, and also write a human-readable `EVAL.md` through Bash (`cat > EVAL.md`):
