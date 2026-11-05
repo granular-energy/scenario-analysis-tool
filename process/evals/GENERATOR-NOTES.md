@@ -1,72 +1,100 @@
-# Generator notes — Milestone M3
+# Generator notes — Milestone M3b
 
 ## What was built
 
-### Results tab header (M3.1–M3.2)
-- **Granularity description**: plain English text derived from `engineResult.granularity` — e.g. "Hourly matching, shape preserved within each hour". Updates when the user changes granularity on the Allocation tab.
-- **Consumer selector**: dropdown with "Whole portfolio" (default) plus one entry per consumer. Switching consumers is local UI state — does not re-run the engine (M3.15).
+### Generator sizing (M3b.1–M3b.4)
+- **Annual MWh input**: Generator card label changed to "Annual generation (MWh)". Field is pre-filled from `defaultCapacityMW × capacityFactor × 8760` when adding from the library (Solar PV Temperate: 19,272 MWh; Wind Onshore Temperate: 52,560 MWh). Demo portfolio: Solar 24,090 MWh, Wind 26,280 MWh.
+- **Capacity hint**: Below the sizing input, "≈ {MW} MW at a {CF} capacity factor" computed as `annualMWh / (capacityFactor × 8760)`. Demo solar shows "≈ 25 MW at a 0.11 capacity factor".
+- **Schema migration**: `migratePortfolioState()` in `src/state/persistence.ts` detects generators with `capacityMW` but no `annualMWh`, converts via `Math.round(capacityMW × capacityFactor × 8760)`, removes `capacityMW`, and retains `capacityFactor`. Unit tested.
+- **Engine parity**: Golden fixture scores unchanged (hourly 67.33%, annual 67.33%) because `shape × annualMWh` produces the same hourly MWh as the old `shape × capacityMW × capacityFactor × 8760`.
 
-### Score tiles (M3.3–M3.7)
-- **Hourly matching score**: large teal-accented number, 67.33% for the demo portfolio.
-- **Annual (volumetric)**: beside the hourly tile, clearly labelled. 67.33% for the demo at hourly granularity (identical because hourly matching is the strictest).
-- **Excess MWh**: 0 MWh at hourly granularity (correct — allocation never exceeds demand in any hour).
-- **Unmatched demand**: ~16,335 MWh (≈ 50,000 × (1 − 67.33/100)).
-- Each tile has an info button (ⓘ) with a hover/click tooltip explaining the metric.
+### Allocation matrix enhancements (M3b.5–M3b.9)
+- **Row/column headers**: Each row header shows the generator's name and formatted annual MWh (e.g. "Solar PV temperate — 24,090 MWh"). Column headers show consumer name and annual consumption MWh.
+- **% / MWh toggle**: A toggle bar ("Enter as: % / MWh") switches which field is editable. Default is %. In MWh mode, typing 12,045 MWh in the solar→DC cell shows "50.0 %" computed. The matrix state remains in percent internally.
+- **Row and column totals**: Each row shows total allocated MWh and %. Warning indicator (red background, ⚠) appears if row exceeds 100%. Column totals row shows how much each consumer receives as MWh and % of their consumption.
+- **Allocate evenly**: Works in both modes, distributing equal percentages across consumers.
 
-### Five Highcharts charts (M3.8–M3.12)
-- **Chart 1 — Average 24-hour profile**: 24 x-axis points, stacked area bars by generator technology, demand spline on top, hatched unmatched region.
-- **Chart 2 — Hourly matching heatmap**: 12×24 grid (months × hours), colour intensity represents average match percentage.
-- **Chart 3 — Monthly breakdown**: 12 stacked bars (matched MWh by technology), unmatched hatched segment, monthly score line on secondary axis.
-- **Chart 4 — Example day**: date picker defaults to 1 May (day 120), 24 hourly bars with demand spline, updates when date changes.
-- **Chart 5 — Sankey**: generator → consumer → matched/excess flows, plus unallocated flows per generator. Zero excess flows at hourly granularity.
+### Matching granularity selector (M3b.10–M3b.11)
+- **Introductory text**: "In every method, generation is allocated to each consumer largest generator first…" paragraph above the three options.
+- **Full labels**: "Hourly matching only", "Monthly matching target", "Annual matching target" with multi-sentence explanatory descriptions for each.
+- **Label propagation**: The Results tab header, score strip tooltip, and all references use the full label (not the short internal value).
 
-### Consumer switching (M3.13–M3.14)
-- Selecting a consumer updates all tiles and charts. With the demo's single consumer, values match the portfolio view.
-- Adding a second consumer with different allocation percentages shows different hourly scores per consumer.
+### Sankey chart redesign (M3b.12–M3b.16)
+- **Three-column layout**: Generators (column 0) → Consumers (column 1) → Outcomes (column 2). Outcome nodes: "Matched", "Excess", "Surplus generation".
+- **Surplus flow**: Surplus flows run directly from each generator to the "Surplus generation" outcome node, never through the consumer column.
+- **Stale node fix**: React `key={sankeyKey}` forces Highcharts to fully recreate the chart when the consumer selector changes. No duplicate labels or stale nodes.
+- **Per-consumer view**: Only that consumer's share of each generator appears. Surplus generation is omitted, with explanatory note: "Surplus generation is a portfolio-level concept…"
+- **Flow balance**: Unit test (`sankeyBalance.test.ts`) verifies that for each generator, outgoing link weights sum to its total generation MWh, at all three granularities.
+- **Tooltips and overlap**: `nodePadding: 12`, `minLinkWidth: 1`, `allowOverlap: false`, `linkOpacity: 0.5`. Tooltips on all nodes and links.
 
-### Empty state (M3.16)
-- When all allocation cells are 0, the Results tab shows a guidance message and no charts/tiles.
+### Bar chart stacking (M3b.17–M3b.18)
+- **Correct stack order**: All three bar charts (average day, monthly breakdown, example day) stack from bottom: matched per generator (technology colour) → excess per generator (pastel colour, labelled "{name} in excess") → unmatched demand (hatched pattern). Demand spline (#0F4974) drawn on top.
+- **Excess omission**: Generators with total excess below 0.01 MWh are omitted from the chart. At hourly granularity with the demo portfolio, no excess series appear.
 
-### Design compliance (M3.17–M3.19)
-- Technology colours come from `src/components/results/charts/palette.ts` — no hard-coded hex colours in component files.
-- Chart defaults use Inter font, dotted grid lines, legend below, no top/right borders.
-- At 375px viewport width, tiles wrap to a 2×2 grid; charts resize responsively.
+### FEEDBACK.md fixes (M3b.19–M3b.20)
+- **Example day picker**: Changed to a `<select>` dropdown with 365 options showing "d Month" format (e.g. "1 May"). No year anywhere in the control, chart title, or axis labels.
+- **Monthly y-axis label**: Explicitly set `rotation: 0, align: 'high'` on the yAxis title in `monthlyBreakdownConfig.ts`. Label is now horizontal, matching the other charts.
+- Marked all three FEEDBACK.md items as `[fixed in M3b]`.
 
-### Technical (M3.20–M3.23)
-- Results tab fully replaces the old "Coming soon" placeholder.
-- `npm run typecheck`, `npm test` (75 tests), `npm run lint`, and `npm run build` all pass clean.
+### Invariants (M3b.21–M3b.22)
+- All golden-fixture parity tests pass (no fixture changes).
+- `npm run build`, `npm run typecheck`, `npm run lint` all pass clean.
+- Existing M2/M3 e2e tests updated (not deleted) for new generator sizing and labels.
 
-## Highcharts integration approach
+### Mobile responsiveness (M3b.23)
+- At 375px viewport: generator card sizing input full-width with visible hint, allocation matrix horizontally scrollable with readable headers, granularity selector descriptions readable without overflow, Sankey chart scrollable, results header stacks vertically, day picker wraps.
 
-The standard `highcharts-react-official` package crashes in Vite 8's Rolldown bundler due to CJS interop issues (React error #130: element type is object). The fix:
+## Files changed
 
-1. **Custom `Chart.tsx` wrapper**: uses `Highcharts.chart()` imperatively via `useEffect` + `useRef`, updating on options change and destroying on unmount. This avoids the CJS default-export interop problem.
+### Types and state
+- `src/state/portfolioTypes.ts` — `capacityMW` → `annualMWh` on `PortfolioGenerator` and action payload
+- `src/state/portfolioReducer.ts` — `UPDATE_GENERATOR_SIZING` uses `annualMWh`
+- `src/state/usePortfolio.ts` — `scaleGenerator` uses `g.annualMWh` directly
+- `src/state/demoPortfolio.ts` — Demo generators sized in MWh
+- `src/state/persistence.ts` — Added `migratePortfolioState()` for old schema migration
 
-2. **Vite ESM aliases**: `vite.config.ts` maps `highcharts` and its sub-modules (`highcharts/modules/heatmap`, etc.) to their ESM source builds (`highcharts/es-modules/masters/*.src.js`) using regex `find` patterns. This ensures all modules share the same `Globals.js` singleton.
+### Components
+- `src/components/portfolio/GeneratorCard.tsx` — Annual MWh input with capacity hint
+- `src/components/portfolio/PortfolioTab.tsx` — Library/upload creation uses `annualMWh`
+- `src/components/allocation/AllocationMatrix.tsx` — % / MWh toggle, headers with volumes, row/column totals
+- `src/components/allocation/GranularitySelector.tsx` — Intro text and full descriptions
+- `src/components/results/ResultsTab.tsx` — Sankey key, day picker dropdown, excess computation, surplus note
+- `src/components/results/granularityLabel.ts` — Full label text
+- `src/components/layout/ScoreStrip.tsx` — Granularity tooltip
 
-3. **Side-effect imports**: `Chart.tsx` imports `highcharts/highcharts-more`, `highcharts/modules/heatmap`, `highcharts/modules/sankey`, and `highcharts/modules/pattern-fill` for side effects. The ESM versions register themselves at import time.
+### Chart configs
+- `src/components/results/charts/sankeyConfig.ts` — Three-column layout, surplus flows, per-consumer view
+- `src/components/results/charts/averageDayConfig.ts` — Matched + excess series
+- `src/components/results/charts/exampleDayConfig.ts` — Matched + excess series
+- `src/components/results/charts/monthlyBreakdownConfig.ts` — Corrected stacking, horizontal y-axis label
 
-## Fixes from evaluator feedback (second attempt)
+### Styles
+- `src/styles/app.css` — Matrix toggle, header MWh, cell computed, totals row, granularity intro, Sankey note, mobile responsive CSS
 
-1. **M3.9 — Heatmap yAxis order**: Set `reversed: true` on yAxis in `heatmapConfig.ts` so Jan appears at the top row and Dec at the bottom.
-
-2. **M3.10 — Excess epsilon at hourly granularity**: Added a 0.01 MWh tolerance threshold in `ResultsTab.tsx` when computing per-generator monthly excess (`raw < 0.01 ? 0 : raw`), and tightened the filter in `monthlyBreakdownConfig.ts` (`.some(v => v >= 0.01)`). At hourly granularity, no excess series appears in the chart legend or data.
-
-3. **M3.17 — Hard-coded hex colours**: Moved all hex colour literals from `heatmapConfig.ts` (6 gradient stops + border), `chartDefaults.ts` (`#897F78`), and `sankeyConfig.ts` (`#2A2929`) into `palette.ts` as named exports (`HEATMAP_GRADIENT_STOPS`, `NEUTRAL_600`, `NEUTRAL_1000`, `WHITE`). After the fix, grepping `src/components/results/` for hex codes finds them only in `palette.ts` and test files.
+### Tests
+- `src/state/__tests__/persistence.test.ts` — Migration unit tests
+- `src/state/__tests__/portfolioReducer.test.ts` — Updated for annualMWh
+- `src/components/results/charts/__tests__/sankeyBalance.test.ts` — Flow balance assertions
+- `src/components/results/charts/__tests__/averageDayConfig.test.ts` — Updated for matched/excess fields
+- `src/components/results/__tests__/granularityLabel.test.ts` — Updated label text
+- `tests/e2e/m3b-enhancements.spec.ts` — 14 new M3b e2e tests
+- `tests/e2e/m2-portfolio-allocation.spec.ts` — Updated for new generator card
+- `tests/e2e/m3-results.spec.ts` — Updated for new labels and day picker
 
 ## What was not finished
 
-Everything in the M3 contract was implemented. All 23 criteria are covered.
+All 23 criteria in the M3b contract were implemented.
 
 ## How to test
 
-1. `npm run dev` — open `http://localhost:5173`, navigate to the Results tab.
-2. Demo portfolio: 1 consumer (Data centre, 50,000 MWh), 2 generators (Solar PV temperate 25 MW, Wind onshore temperate 10 MW), hourly granularity. Tiles should show 67.33% hourly and annual scores, 0 excess, ~16,335 unmatched.
-3. Switch consumer selector between "Whole portfolio" and "Data centre" — values match with a single consumer.
-4. Add a second consumer (e.g. Office temperate) with different allocation splits to see different per-consumer scores.
-5. Change granularity to Monthly on the Allocation tab, return to Results — granularity text and scores update.
-6. Set all allocation cells to 0 — Results shows empty state.
-7. Resize browser to 375px width — tiles wrap, charts resize, no horizontal overflow.
-8. For automated verification:
-   - `npm run typecheck && npm test && npm run lint` for unit tests.
-   - `npm run build && npm run test:e2e` for Playwright e2e tests (16 M3 tests + 18 M2 tests).
+1. `npm run dev` — open `http://localhost:5173`.
+2. **Generator sizing**: Demo portfolio shows Solar 24,090 MWh ("≈ 25 MW at a 0.11 capacity factor") and Wind 26,280 MWh. Add Solar PV Temperate from library — pre-fills 19,272.
+3. **Schema migration**: Set `localStorage.setItem('sat-v3-portfolio', JSON.stringify({...}))` with `capacityMW: 25, capacityFactor: 0.11` on a generator, reload — shows migrated 24,090 MWh.
+4. **Allocation matrix**: Navigate to the Allocation tab. Row/column headers show name + MWh. Toggle to MWh input mode, type 12045 in solar→DC cell, see "50.0 %" computed. Row totals show 24,090 MWh / 100.0 %. Column totals row visible.
+5. **Granularity selector**: Three options with full labels and descriptions. Intro text visible.
+6. **Results tab**: Granularity label shows full text. Sankey has three columns (Generators, Consumers, Outcomes). Switch consumer selector — no stale nodes. Per-consumer view omits surplus with explanatory note.
+7. **Bar charts**: Switch to monthly granularity — excess series appear with pastel colours. At hourly, no excess series in legend.
+8. **Example day**: Picker shows "1 May" etc., no year.
+9. **Monthly y-axis**: "MWh" label horizontal at top of axis.
+10. **Mobile**: Chrome DevTools → 375×812 viewport; navigate all tabs — no clipping or overflow.
+11. **Automated**: `npm run typecheck && npm test && npm run lint` (83 unit tests, all pass). `npm run build && npm run test:e2e` (50 e2e tests, all pass).
