@@ -73,14 +73,16 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
     await expect(items.filter({ hasText: 'Solar PV temperate' })).toHaveCount(1)
   })
 
-  test('M2.8 Consumer sizing pre-filled, generator shows CF and annual MWh', async ({ page }) => {
-    // Demo portfolio already loaded: data centre at 50 000, solar at 25 MW
+  test('M2.8 Consumer sizing pre-filled, generator shows annual MWh and capacity hint', async ({ page }) => {
+    // Demo portfolio already loaded: data centre at 50 000, solar at 24 090 MWh
     const consumerSizing = page.locator('[data-testid="consumer-sizing"]').first()
     await expect(consumerSizing).toHaveValue('50000')
 
-    // Generator cards should show capacity factor and annual MWh
-    const generatorMeta = page.locator('.member-card__meta').first()
-    await expect(generatorMeta).toBeVisible()
+    // Generator cards should show capacity hint (≈ MW at CF)
+    const generatorHint = page.locator('[data-testid="generator-capacity-hint"]').first()
+    await expect(generatorHint).toBeVisible()
+    await expect(generatorHint).toContainText('MW')
+    await expect(generatorHint).toContainText('capacity factor')
   })
 
   test('M2.9 Portfolio members show shape previews', async ({ page }) => {

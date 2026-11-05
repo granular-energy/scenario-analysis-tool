@@ -12,8 +12,7 @@ test.describe('M3: Results tab', () => {
 
   test('M3.1 Granularity description updates when changed', async ({ page }) => {
     const granularity = page.locator('[data-testid="results-granularity"]')
-    await expect(granularity).toContainText('Hourly matching')
-    await expect(granularity).toContainText('shape preserved')
+    await expect(granularity).toContainText('Hourly matching only')
 
     // Switch to monthly on Allocation tab
     await page.click('[data-tab="allocation"]')
@@ -21,7 +20,7 @@ test.describe('M3: Results tab', () => {
 
     // Return to Results and check text changed
     await page.click('[data-tab="results"]')
-    await expect(granularity).toContainText('Monthly matching')
+    await expect(granularity).toContainText('Monthly matching target')
   })
 
   test('M3.2 Consumer selector shows Whole portfolio and Data centre', async ({ page }) => {
@@ -124,18 +123,23 @@ test.describe('M3: Results tab', () => {
     await expect(chart.locator('.highcharts-container')).toBeVisible()
   })
 
-  test('M3.11 Chart 4 — Example day defaults to May 1 and updates', async ({ page }) => {
+  test('M3.11 Chart 4 — Example day defaults to 1 May and updates', async ({ page }) => {
     const chart = page.locator('[data-testid="chart-example-day"]')
     await expect(chart).toBeVisible()
     await expect(chart.locator('.highcharts-container')).toBeVisible()
 
-    // Check default date
+    // Check default date (day index 120 = 1 May)
     const picker = page.locator('[data-testid="day-picker"]')
-    await expect(picker).toHaveValue('2024-05-01')
+    await expect(picker).toHaveValue('120')
 
-    // Change date and verify chart updates (different date should work)
-    await picker.fill('2024-08-15')
-    // Chart should still be visible (it re-renders)
+    // The chart title should show day and month only, no year
+    const title = chart.locator('.results-tab__chart-title')
+    await expect(title).toContainText('1 May')
+    const titleText = await title.textContent()
+    expect(titleText).not.toMatch(/\d{4}/)
+
+    // Change day and verify chart updates
+    await picker.selectOption({ label: '15 August' })
     await expect(chart.locator('.highcharts-container')).toBeVisible()
   })
 
