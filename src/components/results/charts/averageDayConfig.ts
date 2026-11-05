@@ -124,7 +124,7 @@ export function buildAverageDayConfig(input: AverageDayInput): Highcharts.Option
     yAxis: {
       title: { text: 'MWh' },
     },
-    series: [...matchedSeries, ...excessSeries, unmatchedSeries, demandSeries],
+    series: [...matchedSeries, unmatchedSeries, ...excessSeries, demandSeries],
   })
 }
 

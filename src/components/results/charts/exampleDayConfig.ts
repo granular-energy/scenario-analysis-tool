@@ -110,7 +110,7 @@ export function buildExampleDayConfig(input: ExampleDayInput): Highcharts.Option
     yAxis: {
       title: { text: 'MWh' },
     },
-    series: [...matchedSeries, ...excessSeries, unmatchedSeries, demandSeries],
+    series: [...matchedSeries, unmatchedSeries, ...excessSeries, demandSeries],
   })
 }
 

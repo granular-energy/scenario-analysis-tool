@@ -310,19 +310,20 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
         keys: ['from', 'to', 'weight'],
         data,
         nodes: nodeMap,
-        dataLabels: [
-          {
-            enabled: true,
-            nodeFormatter: undefined,
-            style: {
-              fontFamily: CHART_FONT_FAMILY,
-              fontSize: '11px',
-              fontWeight: '500',
-              color: NEUTRAL_1000,
-              textOutline: 'none',
-            },
+        dataLabels: {
+          enabled: true,
+          nodeFormat: '{point.name}',
+          style: {
+            fontFamily: CHART_FONT_FAMILY,
+            fontSize: '11px',
+            fontWeight: '500',
+            color: NEUTRAL_1000,
+            textOutline: 'none',
           },
-        ],
+          /* Place labels outside small nodes rather than hiding them */
+          crop: false,
+          overflow: 'allow' as Highcharts.DataLabelsOverflowValue,
+        } as Highcharts.SeriesSankeyDataLabelsOptionsObject,
         linkOpacity: 0.5,
         nodeWidth: 20,
         nodePadding: 12,
@@ -331,11 +332,6 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
     ],
     plotOptions: {
       series: { animation: false },
-      sankey: {
-        dataLabels: {
-          allowOverlap: false,
-        },
-      },
     },
   }
 }

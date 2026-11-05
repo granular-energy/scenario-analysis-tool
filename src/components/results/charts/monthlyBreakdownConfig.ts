@@ -144,6 +144,6 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
         gridLineWidth: 0,
       },
     ],
-    series: [...matchedSeries, ...excessSeries, unmatchedSeries, scoreSeries],
+    series: [...matchedSeries, unmatchedSeries, ...excessSeries, scoreSeries],
   })
 }
