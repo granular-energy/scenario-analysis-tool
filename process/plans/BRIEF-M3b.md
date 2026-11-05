@@ -18,13 +18,13 @@ Changes requested by Toby after reviewing M2 and M3 on 5 Nov 2026, plus the open
 
 ## 3. Matching granularity needs real explanations
 
-Replace the one-liners with a short panel per option that states what is compared, what constraint applies, and what the result shows. Copy (edit for fit, keep the meaning):
+Each method aims for 100 % matching at its own resolution; the hourly score then shows what is left when you look hour by hour. Replace the one-liners with a short panel per option. Copy (edit for fit, keep the meaning):
 
-- **Hourly** — *What happens:* each hour of the year is matched on its own. *Constraint:* generation can only cover consumption in the same hour; surplus in one hour cannot cover a shortfall in another. *Result:* the hourly score and the annual score are the same number. This is 24/7 hourly matching, the strictest standard.
-- **Monthly** — *What happens:* each calendar month is matched as a block, as in a monthly-matched supply contract. *Constraint:* the volume allocated in a month is capped at that month's consumption, and it keeps the generator's own hourly shape; it cannot be moved into the hours that happen to need it. *Result:* the annual score shows how much of consumption was covered on paper; the hourly score shows how much of that was actually covered hour by hour.
-- **Annual** — *What happens:* the whole year is matched as one block, as with annual certificates (GoOs, REGOs). *Constraint:* allocation is capped at annual consumption and keeps the generator's shape. *Result:* the annual score can reach 100 % while the hourly score shows the real hour-by-hour coverage behind the claim.
+- **Hourly** — Aims for 100 % matching in every hour. Allocation in each hour is capped at that hour's consumption, so there is never over-allocation. The hourly and annual scores are the same number. This is 24/7 hourly matching, the strictest standard.
+- **Monthly** — Aims for 100 % matching in every calendar month, as close as supply allows. Allocation in each month is capped at that month's consumption and keeps the generator's own hourly shape, so within the month some hours are over-supplied (excess) and others fall short. The hourly score shows how much of a 100 %-monthly-matched position holds hour by hour.
+- **Annual** — Aims for 100 % matching over the whole year, as with annual certificates (GoOs, REGOs). Allocation is capped at annual consumption and keeps the generator's shape. The annual score can reach 100 % while the hourly score shows how much of that claim holds hour by hour.
 
-Add one sentence above the options: "In every method, generation is allocated to consumers in the order of largest generator first, up to what the consumer needs in the matching window; nothing is optimised. This is how the Granular platform allocates." Keep the Results header line that names the chosen method.
+Add one sentence above the options: "In every method, generation is allocated to each consumer largest generator first, up to the consumer's consumption in the matching window, keeping each generator's hourly shape. This is how the Granular platform allocates." Keep the Results header line that names the chosen method.
 
 ## 4. Sankey: fix and make it make sense
 
@@ -42,6 +42,14 @@ Required design:
 ## 5. Open FEEDBACK.md items
 
 Fix the three items logged on 2 Nov (example-day picker shows a real year; Sankey "Unallocated" wording, superseded by section 4; monthly chart y-axis label rotated) and mark them fixed.
+
+## 6. Bar charts must stack like the platform's "Demand and allocation over time"
+
+Reference screenshot: `process/research/reference-platform-demand-allocation-chart.webp`. In all three bar charts (average 24-hour profile, monthly breakdown, example day) the stack order from the bottom is:
+1. matched energy per generator, in the technology's allocated colour;
+2. excess per generator, in the technology's lighter "excess" colour, labelled "<name> in excess";
+3. unmatched demand on top, as the hatched pattern;
+with the demand spline (`#0F4974`) drawn over the stack. Today unmatched is at the bottom, which is wrong. Legend order follows the stack. Excess series are omitted when their total is below 0.01 MWh (hourly granularity).
 
 ## Out of scope
 Scenarios, Compare, PDF, HubSpot (M4). New charts.
