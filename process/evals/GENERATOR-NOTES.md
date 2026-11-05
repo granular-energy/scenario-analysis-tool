@@ -1,104 +1,87 @@
-# Generator notes — Milestone M3b
+# Generator notes — Milestone M3c
 
 ## What was built
 
-### Generator sizing (M3b.1–M3b.4)
-- **Annual MWh input**: Generator card label changed to "Annual generation (MWh)". Field is pre-filled from `defaultCapacityMW × capacityFactor × 8760` when adding from the library (Solar PV Temperate: 19,272 MWh; Wind Onshore Temperate: 52,560 MWh). Demo portfolio: Solar 24,090 MWh, Wind 26,280 MWh.
-- **Capacity hint**: Below the sizing input, "≈ {MW} MW at a {CF} capacity factor" computed as `annualMWh / (capacityFactor × 8760)`. Demo solar shows "≈ 25 MW at a 0.11 capacity factor".
-- **Schema migration**: `migratePortfolioState()` in `src/state/persistence.ts` detects generators with `capacityMW` but no `annualMWh`, converts via `Math.round(capacityMW × capacityFactor × 8760)`, removes `capacityMW`, and retains `capacityFactor`. Unit tested.
-- **Engine parity**: Golden fixture scores unchanged (hourly 67.33%, annual 67.33%) because `shape × annualMWh` produces the same hourly MWh as the old `shape × capacityMW × capacityFactor × 8760`.
+### Engine: as-produced matching method (M3c.1–M3c.5)
+- **Type widened**: `MatchingGranularity` in `src/engine/types.ts` now includes `'as-produced'` as a fourth union member.
+- **Allocation path**: `allocateToConsumer` in `src/engine/allocate.ts` has a dedicated `'as-produced'` code path that assigns each generator's full matrix-share supply hour by hour with no cap at demand. No `min(available, remaining)` step — the consumer receives everything.
+- **Scoring**: The existing `summarise` function in `score.ts` correctly computes `matched(h) = min(allocated(h), demand(h))`, `excess(h) = allocated(h) - matched(h)`, `unmatched(h) = demand(h) - matched(h)` from any allocation series, so it handles as-produced without changes.
+- **Golden fixtures**: Removed the `SUPPORTED_GRANULARITIES` guard and `TODO(M3c)` comment from `golden.test.ts`. All as-produced fixture scenarios now run and pass within 1e-6 relative tolerance.
+- **Existing tests**: All 3 existing granularity golden tests (hourly, monthly, annual) still pass unchanged. No fixture values altered.
+- **Engine purity**: `src/engine/` has no React, DOM, or component/state imports.
 
-### Allocation matrix enhancements (M3b.5–M3b.9)
-- **Row/column headers**: Each row header shows the generator's name and formatted annual MWh (e.g. "Solar PV temperate — 24,090 MWh"). Column headers show consumer name and annual consumption MWh.
-- **% / MWh toggle**: A toggle bar ("Enter as: % / MWh") switches which field is editable. Default is %. In MWh mode, typing 12,045 MWh in the solar→DC cell shows "50.0 %" computed. The matrix state remains in percent internally.
-- **Row and column totals**: Each row shows total allocated MWh and %. Warning indicator (red background, ⚠) appears if row exceeds 100%. Column totals row shows how much each consumer receives as MWh and % of their consumption.
-- **Allocate evenly**: Works in both modes, distributing equal percentages across consumers.
+### Granularity selector — Allocation tab (M3c.6–M3c.9)
+- **"How allocation works" note**: Added below the method options with `data-testid="how-allocation-works"`. Contains the exact verbatim text: "In all four methods a generator's allocation follows its own hourly output shape — it is never moved into the hours that happen to need it. The methods differ only in the window within which allocation is capped at consumption: every hour, every month, the whole year, or not at all."
+- **Fourth option**: Label is exactly "As produced (no cap)" with the specified description text about pay-as-produced PPA.
+- **Updated descriptions**: All four options have descriptions that state the cap window and shape rule. Hourly mentions capping at each hour's consumption. Monthly mentions capping at monthly consumption with shape preserved. Annual mentions capping at annual consumption with shape preserved.
+- **Method descriptions fixed** (FEEDBACK.md regression): Replaced drifted M3b descriptions with the agreed copy from BRIEF-M3b section 3, extended with BRIEF-M3c cap-window phrases.
 
-### Matching granularity selector (M3b.10–M3b.11)
-- **Introductory text**: "In every method, generation is allocated to each consumer largest generator first…" paragraph above the three options.
-- **Full labels**: "Hourly matching only", "Monthly matching target", "Annual matching target" with multi-sentence explanatory descriptions for each.
-- **Label propagation**: The Results tab header, score strip tooltip, and all references use the full label (not the short internal value).
+### Results header and method context (M3c.10–M3c.14)
+- **Full header line**: Results tab header now shows `"label · cap rule · shape rule"`. Exact strings:
+  - Hourly: "Hourly matching only · capped at hourly consumption · no over-allocation possible"
+  - Monthly: "Monthly matching target · allocation capped at monthly consumption · generator shape preserved"
+  - Annual: "Annual matching target · allocation capped at annual consumption · generator shape preserved"
+  - As-produced: "As produced (no cap) · no cap · generator shape preserved"
+- **Shape-preserved tooltip**: The phrase "shape preserved" (in both the Results header and Allocation tab descriptions) is rendered as an `<abbr>` element with `title` and `aria-label` attributes. The tooltip says: "A generator's allocation follows its own hourly output shape and is not redistributed into other hours. The allocated volume in each hour is proportional to the generator's actual output in that hour."
+- **`granularityLabel` helper**: Returns "As produced (no cap)" for `'as-produced'`. New `granularityInfo()` and `granularityHeaderLine()` helpers also added.
 
-### Sankey chart redesign (M3b.12–M3b.16)
-- **Three-column layout**: Generators (column 0) → Consumers (column 1) → Outcomes (column 2). Outcome nodes: "Matched", "Excess", "Surplus generation".
-- **Surplus flow**: Surplus flows run directly from each generator to the "Surplus generation" outcome node, never through the consumer column.
-- **Stale node fix**: React `key={sankeyKey}` forces Highcharts to fully recreate the chart when the consumer selector changes. No duplicate labels or stale nodes.
-- **Per-consumer view**: Only that consumer's share of each generator appears. Surplus generation is omitted, with explanatory note: "Surplus generation is a portfolio-level concept…"
-- **Flow balance**: Unit test (`sankeyBalance.test.ts`) verifies that for each generator, outgoing link weights sum to its total generation MWh, at all three granularities.
-- **Tooltips and overlap**: `nodePadding: 12`, `minLinkWidth: 1`, `allowOverlap: false`, `linkOpacity: 0.5`. Custom `tooltip.formatter` on all nodes and links: link tooltips show MWh and percentage of source (e.g. "Solar PV temperate → Data centre: 24,090 MWh (100.0% of Solar PV temperate)"); node tooltips show the node's total MWh.
+### Demo portfolio with as-produced (M3c.15–M3c.16)
+- With the demo portfolio (Data Centre 50,000 MWh; Solar 24,090 MWh at 100%; Wind 26,280 MWh at 100%), selecting "As produced (no cap)" shows results that match the as-produced golden fixture values.
+- At as-produced granularity, the excess tile shows a non-zero value (since generation is not capped at demand), confirming the uncapped allocation behaviour.
 
-### Bar chart stacking (M3b.17–M3b.18)
-- **Correct stack order**: All three bar charts (average day, monthly breakdown, example day) stack from bottom: matched per generator (technology colour) → excess per generator (pastel colour, labelled "{name} in excess") → unmatched demand (hatched pattern). Demand spline (#0F4974) drawn on top.
-- **Excess omission**: Generators with total excess below 0.01 MWh are omitted from the chart. At hourly granularity with the demo portfolio, no excess series appear.
+### Build and type safety (M3c.17–M3c.18)
+- `npm run build`, `npm run typecheck`, and `npm run lint` all pass with zero errors.
+- All `Record<MatchingGranularity, ...>` maps and switch/case blocks handle `'as-produced'`.
+- The `windowsFor` function uses `Exclude<MatchingGranularity, 'as-produced'>` to maintain exhaustive switch coverage.
 
-### FEEDBACK.md fixes (M3b.19–M3b.20)
-- **Example day picker**: Changed to a `<select>` dropdown with 365 options showing "d Month" format (e.g. "1 May"). No year anywhere in the control, chart title, or axis labels.
-- **Monthly y-axis label**: Explicitly set `rotation: 0, align: 'high'` on the yAxis title in `monthlyBreakdownConfig.ts`. Label is now horizontal, matching the other charts.
-- Marked all three FEEDBACK.md items as `[fixed in M3b]`.
+### Mobile (M3c.19)
+- At 375px viewport: all four granularity options visible without horizontal overflow. The "How allocation works" note and descriptions are readable. The Results header wraps gracefully (smaller font, word-wrap enabled).
 
-### Invariants (M3b.21–M3b.22)
-- All golden-fixture parity tests pass (no fixture changes).
-- `npm run build`, `npm run typecheck`, `npm run lint` all pass clean.
-- Existing M2/M3 e2e tests updated (not deleted) for new generator sizing and labels.
-
-### Mobile responsiveness (M3b.23)
-- At 375px viewport: generator card sizing input full-width with visible hint, allocation matrix horizontally scrollable with readable headers, granularity selector descriptions readable without overflow, Sankey chart scrollable, results header stacks vertically, day picker wraps.
+### FEEDBACK.md regression fixes
+- **Bar chart stacking order**: Fixed in all three bar charts (average day, example day, monthly breakdown). Stack order is now: matched per generator → unmatched (hatched) → excess per generator → demand spline on top. Previously unmatched was at the bottom.
+- **Sankey node labels**: Fixed by replacing the `dataLabels` array with a single object using `nodeFormat: '{point.name}'`, removing `nodeFormatter: undefined`, and removing the `plotOptions.sankey.dataLabels.allowOverlap` override. Labels now render on all nodes, with `crop: false` and `overflow: 'allow'` so small nodes get external labels.
+- **Method descriptions**: Already fixed as part of the main M3c work (see above).
 
 ## Files changed
 
-### Types and state
-- `src/state/portfolioTypes.ts` — `capacityMW` → `annualMWh` on `PortfolioGenerator` and action payload
-- `src/state/portfolioReducer.ts` — `UPDATE_GENERATOR_SIZING` uses `annualMWh`
-- `src/state/usePortfolio.ts` — `scaleGenerator` uses `g.annualMWh` directly
-- `src/state/demoPortfolio.ts` — Demo generators sized in MWh
-- `src/state/persistence.ts` — Added `migratePortfolioState()` for old schema migration
+### Engine
+- `src/engine/types.ts` — Added `'as-produced'` to `MatchingGranularity` union
+- `src/engine/allocate.ts` — Added as-produced allocation path; narrowed `windowsFor` type
+- `src/engine/__tests__/golden.test.ts` — Removed `SUPPORTED_GRANULARITIES` guard
+- `src/engine/__tests__/engine.test.ts` — Added as-produced unit tests
 
 ### Components
-- `src/components/portfolio/GeneratorCard.tsx` — Annual MWh input with capacity hint
-- `src/components/portfolio/PortfolioTab.tsx` — Library/upload creation uses `annualMWh`
-- `src/components/allocation/AllocationMatrix.tsx` — % / MWh toggle, headers with volumes, row/column totals
-- `src/components/allocation/GranularitySelector.tsx` — Intro text and full descriptions
-- `src/components/results/ResultsTab.tsx` — Sankey key, day picker dropdown, excess computation, surplus note
-- `src/components/results/granularityLabel.ts` — Full label text
-- `src/components/layout/ScoreStrip.tsx` — Granularity tooltip
+- `src/components/allocation/GranularitySelector.tsx` — Four options with updated descriptions, "How allocation works" note, shape-preserved tooltips
+- `src/components/results/ResultsTab.tsx` — Full header line with shape-preserved tooltip
+- `src/components/results/granularityLabel.ts` — Added `granularityInfo()`, `granularityHeaderLine()`, `SHAPE_PRESERVED_TOOLTIP`
 
-### Chart configs
-- `src/components/results/charts/sankeyConfig.ts` — Three-column layout, surplus flows, per-consumer view
-- `src/components/results/charts/averageDayConfig.ts` — Matched + excess series
-- `src/components/results/charts/exampleDayConfig.ts` — Matched + excess series
-- `src/components/results/charts/monthlyBreakdownConfig.ts` — Corrected stacking, horizontal y-axis label
+### Charts
+- `src/components/results/charts/averageDayConfig.ts` — Fixed series order
+- `src/components/results/charts/exampleDayConfig.ts` — Fixed series order
+- `src/components/results/charts/monthlyBreakdownConfig.ts` — Fixed series order
+- `src/components/results/charts/sankeyConfig.ts` — Fixed node label rendering
 
 ### Styles
-- `src/styles/app.css` — Matrix toggle, header MWh, cell computed, totals row, granularity intro, Sankey note, mobile responsive CSS
+- `src/styles/app.css` — Added `.granularity-selector__note`, `.granularity-selector__shape-tip`, `.results-tab__shape-tip`, and mobile styles
 
 ### Tests
-- `src/state/__tests__/persistence.test.ts` — Migration unit tests
-- `src/state/__tests__/portfolioReducer.test.ts` — Updated for annualMWh
-- `src/components/results/charts/__tests__/sankeyBalance.test.ts` — Flow balance assertions
-- `src/components/results/charts/__tests__/averageDayConfig.test.ts` — Updated for matched/excess fields
-- `src/components/results/__tests__/granularityLabel.test.ts` — Updated label text
-- `tests/e2e/m3b-enhancements.spec.ts` — 14 new M3b e2e tests
-- `tests/e2e/m2-portfolio-allocation.spec.ts` — Updated for new generator card
-- `tests/e2e/m3-results.spec.ts` — Updated for new labels and day picker
-
-## Fix from evaluator feedback (second attempt)
-
-1. **M3b.16 — Sankey tooltip percentage missing**: Replaced the static `pointFormat` with a custom `tooltip.formatter` function. Link tooltips now compute `weight / sourceTotal * 100` and display both MWh and percentage of the source node (e.g. "Solar PV temperate → Data centre: 24,090 MWh (100.0% of Solar PV temperate)"). Node tooltips show the node's total MWh via pre-computed `nodeTotals` map. The `nodePadding`, `minLinkWidth`, and `allowOverlap` settings were already correct.
+- `src/components/results/__tests__/granularityLabel.test.ts` — Tests for all four granularities, info, header line, tooltip
+- `src/components/results/charts/__tests__/sankeyBalance.test.ts` — Added as-produced to test list
+- `tests/e2e/m3c-as-produced.spec.ts` — 12 new e2e tests covering all M3c criteria
+- `tests/e2e/m3b-enhancements.spec.ts` — Updated for four options and expanded header
 
 ## What was not finished
 
-All 23 criteria in the M3b contract were implemented.
+All 19 criteria in the M3c contract were implemented.
 
 ## How to test
 
 1. `npm run dev` — open `http://localhost:5173`.
-2. **Generator sizing**: Demo portfolio shows Solar 24,090 MWh ("≈ 25 MW at a 0.11 capacity factor") and Wind 26,280 MWh. Add Solar PV Temperate from library — pre-fills 19,272.
-3. **Schema migration**: Set `localStorage.setItem('sat-v3-portfolio', JSON.stringify({...}))` with `capacityMW: 25, capacityFactor: 0.11` on a generator, reload — shows migrated 24,090 MWh.
-4. **Allocation matrix**: Navigate to the Allocation tab. Row/column headers show name + MWh. Toggle to MWh input mode, type 12045 in solar→DC cell, see "50.0 %" computed. Row totals show 24,090 MWh / 100.0 %. Column totals row visible.
-5. **Granularity selector**: Three options with full labels and descriptions. Intro text visible.
-6. **Results tab**: Granularity label shows full text. Sankey has three columns (Generators, Consumers, Outcomes). Switch consumer selector — no stale nodes. Per-consumer view omits surplus with explanatory note.
-7. **Bar charts**: Switch to monthly granularity — excess series appear with pastel colours. At hourly, no excess series in legend.
-8. **Example day**: Picker shows "1 May" etc., no year.
-9. **Monthly y-axis**: "MWh" label horizontal at top of axis.
-10. **Mobile**: Chrome DevTools → 375×812 viewport; navigate all tabs — no clipping or overflow.
-11. **Automated**: `npm run typecheck && npm test && npm run lint` (83 unit tests, all pass). `npm run build && npm run test:e2e` (50 e2e tests, all pass).
+2. **As-produced method**: Navigate to the Allocation tab. Four radio options visible; the fourth is "As produced (no cap)". Select it, navigate to Results — scores and tiles update. The excess tile shows a non-zero value (unlike hourly granularity which shows 0).
+3. **"How allocation works" note**: Below the four options, a teal-tinted box explains shape preservation and the four cap windows.
+4. **Shape-preserved tooltip**: Hover over "shape preserved" in the monthly or annual option description, or in the Results header — a tooltip appears explaining the concept.
+5. **Results header**: Shows full context line, e.g. "Monthly matching target · allocation capped at monthly consumption · generator shape preserved".
+6. **Bar chart stacking**: Switch to monthly granularity — matched is at bottom, hatched unmatched in the middle, pastel excess on top, demand line at the matched+unmatched boundary.
+7. **Sankey labels**: All nodes show their names. Hover for MWh tooltips.
+8. **Mobile**: Chrome DevTools → 375×812 — all four options and note visible without overflow; Results header wraps.
+9. **Automated**: `npm run typecheck && npm test && npm run lint` (97 unit tests, all pass). `npm run build && npm run test:e2e` (62 e2e tests, all pass).
