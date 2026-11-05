@@ -4,7 +4,7 @@ import { hourWindows, monthWindows, YEAR_WINDOW, type Window } from './typicalYe
 /** Below this many MWh the platform treats supply or an allocation as nothing; mirrored for parity. */
 const NEGLIGIBLE_MWH = 0.001
 
-export function windowsFor(granularity: MatchingGranularity): Window[] {
+export function windowsFor(granularity: Exclude<MatchingGranularity, 'as-produced'>): Window[] {
   switch (granularity) {
     case 'hourly':
       return hourWindows()
@@ -25,6 +25,8 @@ export interface SupplyForConsumer {
  * As-consumed allocation for one consumer. Within each matching window the largest supplier goes first,
  * each allocating min(its supply, remaining demand) spread across the window in its own hourly shape.
  * Returns one hourly allocation series per supplier, in the order given.
+ *
+ * For 'as-produced', each generator's full supply share is assigned with no cap at demand in any window.
  */
 export function allocateToConsumer(
   demandMWh: HourlySeries,
@@ -32,6 +34,17 @@ export function allocateToConsumer(
   granularity: MatchingGranularity,
 ): number[][] {
   const allocations = supplies.map(() => new Array<number>(HOURS_PER_YEAR).fill(0))
+
+  // As-produced: assign each generator's full supply share, no capping at demand
+  if (granularity === 'as-produced') {
+    for (let i = 0; i < supplies.length; i++) {
+      const s = supplies[i].supplyMWh
+      const out = allocations[i]
+      for (let h = 0; h < HOURS_PER_YEAR; h++) out[h] = s[h]
+    }
+    return allocations
+  }
+
   const windowSupply = new Array<number>(supplies.length)
   const order = supplies.map((_, i) => i)
   // The platform preserves shape at half-hourly resolution, so with hourly matching each hour is served in

@@ -3,7 +3,7 @@ export const HOURS_PER_YEAR = 8760
 /** MWh per hour over the typical year; always exactly HOURS_PER_YEAR long. */
 export type HourlySeries = readonly number[]
 
-export type MatchingGranularity = 'hourly' | 'monthly' | 'annual'
+export type MatchingGranularity = 'hourly' | 'monthly' | 'annual' | 'as-produced'
 
 export interface Consumer {
   readonly id: string

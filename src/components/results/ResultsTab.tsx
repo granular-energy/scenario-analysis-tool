@@ -11,7 +11,7 @@ import { usePortfolioContext } from '../../state/usePortfolioContext'
 import { ConsumerSelector } from './ConsumerSelector'
 import { ScoreTile } from './ScoreTile'
 import { Chart } from './Chart'
-import { granularityLabel } from './granularityLabel'
+import { granularityInfo, SHAPE_PRESERVED_TOOLTIP } from './granularityLabel'
 
 import { buildAverageDayConfig, type AverageDayInput } from './charts/averageDayConfig'
 import { buildHeatmapConfig } from './charts/heatmapConfig'
@@ -289,7 +289,26 @@ export function ResultsTab() {
       {/* Header: granularity + consumer selector */}
       <div className="results-tab__header">
         <p className="results-tab__granularity" data-testid="results-granularity">
-          {granularityLabel(engineResult.granularity)}
+          {(() => {
+            const info = granularityInfo(engineResult.granularity)
+            const hasShapeTip = info.shapeRule === 'generator shape preserved'
+            return (
+              <>
+                {info.label} &middot; {info.capRule} &middot;{' '}
+                {hasShapeTip ? (
+                  <abbr
+                    className="results-tab__shape-tip"
+                    title={SHAPE_PRESERVED_TOOLTIP}
+                    aria-label="Shape preserved: a generator's allocation follows its own hourly output shape and is not redistributed into other hours."
+                  >
+                    {info.shapeRule}
+                  </abbr>
+                ) : (
+                  info.shapeRule
+                )}
+              </>
+            )
+          })()}
         </p>
         <ConsumerSelector
           consumers={consumerOptions}

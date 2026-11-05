@@ -706,6 +706,36 @@
   color: var(--ge-text-muted);
 }
 
+.granularity-selector__note {
+  margin-top: var(--ge-space-sm);
+  padding: var(--ge-space-sm);
+  background: var(--ge-teal-100);
+  border-radius: var(--ge-radius-sm);
+  font-size: 13px;
+  color: var(--ge-text);
+  line-height: 1.5;
+}
+
+.granularity-selector__note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ge-text-heading);
+  font-size: 13px;
+}
+
+.granularity-selector__note p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.granularity-selector__shape-tip,
+.results-tab__shape-tip {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+  font-style: normal;
+}
+
 /* ---- Placeholder tabs ---- */
 .placeholder-tab {
   display: flex;
@@ -998,6 +1028,22 @@
 
   .granularity-selector__desc {
     font-size: 12px;
+  }
+
+  /* M3c.19 — Note and options fully visible at 375px */
+  .granularity-selector__note {
+    font-size: 12px;
+    padding: var(--ge-space-xs);
+  }
+
+  .granularity-selector__note p {
+    font-size: 12px;
+  }
+
+  .results-tab__granularity {
+    font-size: 13px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   /* M3b.23 — Sankey scrollable at 375px */

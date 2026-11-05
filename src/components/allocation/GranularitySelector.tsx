@@ -1,26 +1,58 @@
-/** Matching granularity selector with full explanations of each method. */
+/** Matching granularity selector with full explanations of each method and shape-preservation note. */
 
 import { usePortfolioContext } from '../../state/usePortfolioContext'
 import type { MatchingGranularity } from '../../engine/types'
+import { SHAPE_PRESERVED_TOOLTIP } from '../results/granularityLabel'
 
-const OPTIONS: { value: MatchingGranularity; label: string; description: string }[] = [
+/** Render "shape preserved" as an inline element with a tooltip. */
+function ShapePreservedTip() {
+  return (
+    <abbr
+      className="granularity-selector__shape-tip"
+      title={SHAPE_PRESERVED_TOOLTIP}
+      aria-label="Shape preserved: a generator's allocation follows its own hourly output shape and is not redistributed into other hours."
+    >
+      shape preserved
+    </abbr>
+  )
+}
+
+const OPTIONS: {
+  value: MatchingGranularity
+  label: string
+  descriptionParts: (string | 'SHAPE_TIP')[]
+}[] = [
   {
     value: 'hourly',
     label: 'Hourly matching only',
-    description:
-      'Generation is matched to demand hour by hour. Only energy generated in the same hour as consumption counts as matched. This is the strictest measure of temporal matching and shows the true alignment between generation and demand profiles.',
+    descriptionParts: [
+      'Aims for 100 % matching in every hour. Allocation in each hour is capped at that hour\u2019s consumption, so there is never over-allocation. The hourly and annual scores are the same number. This is 24/7 hourly matching, the strictest standard.',
+    ],
   },
   {
     value: 'monthly',
     label: 'Monthly matching target',
-    description:
-      'Generation is matched to demand within each calendar month. A generator can cover demand in any hour of the same month, even if it was not generating in that specific hour. This relaxes the hourly constraint and typically produces a higher matching score, but energy generated in excess of demand within any hour appears as excess.',
+    descriptionParts: [
+      'Aims for 100 % matching in every calendar month, as close as supply allows. Allocation in each month is capped at that month\u2019s consumption and keeps the generator\u2019s own hourly shape (',
+      'SHAPE_TIP',
+      '), so within the month some hours are over-supplied (excess) and others fall short. The hourly score shows how much of a 100 %-monthly-matched position holds hour by hour.',
+    ],
   },
   {
     value: 'annual',
     label: 'Annual matching target',
-    description:
-      'Total annual generation is compared to total annual demand. A generator can cover demand in any hour of the year. This is the loosest measure — it only checks that enough energy was produced over the year, regardless of when. Any mismatch in timing appears as excess in some hours and unmatched demand in others.',
+    descriptionParts: [
+      'Aims for 100 % matching over the whole year, as with annual certificates (GoOs, REGOs). Allocation is capped at annual consumption and keeps the generator\u2019s shape (',
+      'SHAPE_TIP',
+      '). The annual score can reach 100 % while the hourly score shows how much of that claim holds hour by hour.',
+    ],
+  },
+  {
+    value: 'as-produced',
+    label: 'As produced (no cap)',
+    descriptionParts: [
+      'The consumer receives its full share of each generator\u2019s output in every hour, with nothing held back. This is what a pay-as-produced PPA delivers. Excess appears wherever generation exceeds consumption in the hour.',
+    ],
   },
 ]
 
@@ -53,10 +85,22 @@ export function GranularitySelector() {
             />
             <div className="granularity-selector__text">
               <span className="granularity-selector__label">{opt.label}</span>
-              <span className="granularity-selector__desc">{opt.description}</span>
+              <span className="granularity-selector__desc">
+                {opt.descriptionParts.map((part, i) =>
+                  part === 'SHAPE_TIP' ? <ShapePreservedTip key={i} /> : <span key={i}>{part}</span>,
+                )}
+              </span>
             </div>
           </label>
         ))}
+      </div>
+      <div className="granularity-selector__note" data-testid="how-allocation-works">
+        <strong>How allocation works</strong>
+        <p>
+          In all four methods a generator's allocation follows its own hourly output shape — it is never moved
+          into the hours that happen to need it. The methods differ only in the window within which allocation
+          is capped at consumption: every hour, every month, the whole year, or not at all.
+        </p>
       </div>
     </fieldset>
   )

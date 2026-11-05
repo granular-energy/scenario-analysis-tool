@@ -43,7 +43,7 @@ function buildTestInput(granularity: MatchingGranularity): EngineInput {
 }
 
 describe('Sankey flow balance', () => {
-  const granularities: MatchingGranularity[] = ['hourly', 'monthly', 'annual']
+  const granularities: MatchingGranularity[] = ['hourly', 'monthly', 'annual', 'as-produced']
 
   for (const granularity of granularities) {
     it(`balances at ${granularity} granularity`, () => {
