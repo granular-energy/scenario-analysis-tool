@@ -121,6 +121,8 @@ export function buildMonthlyBreakdownConfig(input: MonthlyBreakdownInput): Highc
           },
         },
         min: 0,
+        // Highcharts draws the first series on top of a stack by default; we want matched at the bottom
+        reversedStacks: false,
       },
       {
         title: {

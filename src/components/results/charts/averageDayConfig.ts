@@ -123,6 +123,8 @@ export function buildAverageDayConfig(input: AverageDayInput): Highcharts.Option
     },
     yAxis: {
       title: { text: 'MWh' },
+      // Highcharts draws the first series on top of a stack by default; we want matched at the bottom
+      reversedStacks: false,
     },
     series: [...matchedSeries, unmatchedSeries, ...excessSeries, demandSeries],
   })

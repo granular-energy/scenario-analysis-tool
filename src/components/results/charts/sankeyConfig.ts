@@ -274,6 +274,9 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
       backgroundColor: 'transparent',
       animation: false,
       style: { fontFamily: CHART_FONT_FAMILY },
+      // Node labels sit outside the first and last columns; reserve room so the longest name is not clipped
+      marginLeft: 150,
+      marginRight: 150,
     },
     title: { text: undefined },
     credits: { enabled: false },
@@ -320,7 +323,7 @@ export function buildSankeyChartConfig(input: SankeyInput): Highcharts.Options {
             color: NEUTRAL_1000,
             textOutline: 'none',
           },
-          /* Place labels outside small nodes rather than hiding them */
+          // Labels are placed beside small nodes rather than hidden; the chart margins make room for them
           crop: false,
           overflow: 'allow' as Highcharts.DataLabelsOverflowValue,
         } as Highcharts.SeriesSankeyDataLabelsOptionsObject,
