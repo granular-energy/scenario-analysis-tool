@@ -36,6 +36,7 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
   })
 
   test('M3b.3 Demo portfolio scores match golden fixture', async ({ page }) => {
+    await page.click('[data-tab="results"]')
     const hourlyScore = page.locator('[data-testid="hourly-score"]')
     const annualScore = page.locator('[data-testid="annual-score"]')
 
@@ -46,7 +47,7 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
     const annualNum = parseFloat(annualText!.replace(/[^0-9.]/g, ''))
 
     expect(Math.abs(hourlyNum - 67.33)).toBeLessThan(0.01)
-    expect(Math.abs(annualNum - 67.33)).toBeLessThan(0.01)
+    expect(Math.abs(annualNum - 100.74)).toBeLessThan(0.01)
   })
 
   test('M3b.4 Old schema with capacityMW migrates correctly', async ({ page }) => {

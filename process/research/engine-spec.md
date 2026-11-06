@@ -41,7 +41,7 @@ With hourly granularity this collapses to the familiar per-hour `min()`. With mo
 Per consumer and for the whole portfolio (sums over consumers):
 
 - `hourlyScore = Σ matched / Σ demand × 100`
-- `annualScore = Σ allocated / Σ demand × 100` (can exceed 100)
+- `annualScore = Σ supplied / Σ demand × 100` where supplied is the generation assigned via the matrix before any matching cap; volumetric, independent of the matching method, can exceed 100 (revolt's allocated ÷ demand is still checked in the golden test as `totalAllocatedMWh / totalDemandMWh`)
 - `totalDemandMWh`, `totalAllocatedMWh`, `totalMatchedMWh`, `totalExcessMWh`, `totalUnmatchedMWh`
 - `monthlyScores[12]`, `monthlyMatchedMWh[12]`, `monthlyExcessMWh[12]`, `monthlyUnmatchedMWh[12]`
 - per generator: `allocatedMWh` (hourly), `monthlyAllocatedMWh[12]`, `totalAllocatedMWh`, and its **contribution to matched energy**: `matchedShare_g(h) = matched(h) × A_gc(h) / allocated(h)` (pro-rata when several generators supply the same hour)

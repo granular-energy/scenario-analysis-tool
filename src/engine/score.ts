@@ -15,7 +15,7 @@ function pct(numerator: number, denominator: number): number {
   return denominator > 0 ? (numerator / denominator) * 100 : 0
 }
 
-function summarise(demandMWh: HourlySeries, allocatedMWh: HourlySeries): MatchingSummary {
+function summarise(demandMWh: HourlySeries, allocatedMWh: HourlySeries, suppliedMWh: number): MatchingSummary {
   const matched = new Array<number>(HOURS_PER_YEAR)
   const excess = new Array<number>(HOURS_PER_YEAR)
   const unmatched = new Array<number>(HOURS_PER_YEAR)
@@ -36,8 +36,10 @@ function summarise(demandMWh: HourlySeries, allocatedMWh: HourlySeries): Matchin
   const totalMatched = sum(matched)
   return {
     hourlyScore: pct(totalMatched, totalDemand),
-    annualScore: pct(totalAllocated, totalDemand),
+    // Annual score compares volumes only, so equal annual generation and consumption always reads 100 %
+    annualScore: pct(suppliedMWh, totalDemand),
     totalDemandMWh: totalDemand,
+    totalSuppliedMWh: suppliedMWh,
     totalAllocatedMWh: totalAllocated,
     totalMatchedMWh: totalMatched,
     totalExcessMWh: totalAllocated - totalMatched,
@@ -65,6 +67,7 @@ export function runEngine(input: EngineInput): EngineResult {
   const allocatedByGenerator = new Map<string, Record<string, number>>(generators.map((g) => [g.id, {}]))
   const portfolioDemand = new Array<number>(HOURS_PER_YEAR).fill(0)
   const portfolioAllocated = new Array<number>(HOURS_PER_YEAR).fill(0)
+  let portfolioSupplied = 0
 
   const consumerResults: ConsumerResult[] = consumers.map((consumer) => {
     const supplies: SupplyForConsumer[] = generators.flatMap((g) => {
@@ -76,7 +79,9 @@ export function runEngine(input: EngineInput): EngineResult {
 
     const allocated = new Array<number>(HOURS_PER_YEAR).fill(0)
     allocations.forEach((a) => addInto(allocated, a))
-    const summary = summarise(consumer.demandMWh, allocated)
+    const supplied = supplies.reduce((total, s) => total + sum(s.supplyMWh), 0)
+    portfolioSupplied += supplied
+    const summary = summarise(consumer.demandMWh, allocated, supplied)
 
     const contributions: GeneratorContribution[] = supplies.map((s, i) => {
       const a = allocations[i]
@@ -115,7 +120,7 @@ export function runEngine(input: EngineInput): EngineResult {
 
   return {
     granularity,
-    portfolio: summarise(portfolioDemand, portfolioAllocated),
+    portfolio: summarise(portfolioDemand, portfolioAllocated, portfolioSupplied),
     consumers: consumerResults,
     generators: utilisation,
   }

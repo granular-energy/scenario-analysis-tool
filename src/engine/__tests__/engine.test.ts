@@ -124,6 +124,8 @@ describe('runEngine', () => {
     const b = result.consumers[1]
     expect(a.hourlyScore).toBeCloseTo(100, 9) // 10 MWh of supply for 10 MWh demand
     expect(b.hourlyScore).toBeCloseTo(100, 9) // 5 for 5
+    expect(a.annualScore).toBeCloseTo(100, 9)
+    expect(a.totalSuppliedMWh).toBeCloseTo(10 * HOURS_PER_YEAR, 3)
     expect(a.totalExcessMWh).toBeCloseTo(0, 6)
     const g = result.generators[0]
     expect(g.allocatedMWh).toBeCloseTo(15 * HOURS_PER_YEAR, 3)

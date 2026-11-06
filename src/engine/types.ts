@@ -37,8 +37,11 @@ export interface GeneratorContribution {
 
 export interface MatchingSummary {
   readonly hourlyScore: number
+  /** Volumetric coverage: generation assigned via the matrix ÷ demand, independent of the matching method. */
   readonly annualScore: number
   readonly totalDemandMWh: number
+  /** Generation assigned to this consumer by the matrix, before any matching cap is applied. */
+  readonly totalSuppliedMWh: number
   readonly totalAllocatedMWh: number
   readonly totalMatchedMWh: number
   readonly totalExcessMWh: number

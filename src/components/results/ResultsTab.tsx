@@ -331,7 +331,7 @@ export function ResultsTab() {
           label="Annual (volumetric)"
           value={summary.annualScore.toFixed(2)}
           unit="%"
-          tooltip="The percentage of annual demand covered by the total allocated generation volume. Unlike the hourly score, this does not require generation and demand to occur at the same time — it only compares totals."
+          tooltip="Annual generation assigned to this consumer as a percentage of its annual demand. It compares volumes only, ignoring timing and the matching method, so equal annual generation and consumption reads 100 %."
           testId="tile-annual-score"
         />
         <ScoreTile

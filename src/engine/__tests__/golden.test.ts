@@ -86,7 +86,12 @@ describe('parity with the Granular platform engine (revolt golden fixtures)', ()
         for (const [consumerId, expected] of Object.entries(byConsumer)) {
           const actual = result.consumers.find((c) => c.consumerId === consumerId)!
           expectClose(actual.hourlyScore, expected.hourlyScore, `${consumerId} hourlyScore`)
-          expectClose(actual.annualScore, expected.annualScore, `${consumerId} annualScore`)
+          // revolt reports allocated ÷ demand; the tool's annualScore is volumetric (supplied ÷ demand)
+          expectClose(
+            (actual.totalAllocatedMWh / actual.totalDemandMWh) * 100,
+            expected.annualScore,
+            `${consumerId} allocated ÷ demand`,
+          )
           expectClose(actual.totalAllocatedMWh, expected.totalAllocatedMWh, `${consumerId} allocated`)
           expectClose(actual.totalMatchedMWh, expected.totalMatchedMWh, `${consumerId} matched`)
           expectClose(actual.totalExcessMWh, expected.totalExcessMWh, `${consumerId} excess`)

@@ -65,3 +65,7 @@ Format:
 - Milestone: M3c
 - Severity: high
 - Description: In all three bar charts the hatched "Unmatched" segment is stacked at the bottom. Required order from the bottom: matched per generator, then unmatched (hatched) so its top meets the demand line, then excess per generator above the demand line. See process/research/reference-platform-demand-allocation-chart.webp.
+
+## 2026-11-06 — stale e2e server (fixed)
+
+- Playwright `webServer` had `reuseExistingServer: true` with a bare `npm run preview`. Any preview left running from an earlier harness run served an old `dist/`, so the e2e suite passed against stale code. Config now builds before serving and never reuses a server. Harness evaluators must not start their own preview on 4173.

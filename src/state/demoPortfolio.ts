@@ -1,7 +1,7 @@
 /**
  * Default demo portfolio loaded on first visit (no localStorage).
  * Matches the golden fixture "single-consumer-solar-wind" so the score strip
- * shows 67.33 % hourly and annual scores.
+ * shows a 67.33 % hourly score and a 100.74 % annual (volumetric) score.
  */
 
 import { displayName, getConsumptionEntry, getGenerationEntry, loadShape } from './profileLoader'

@@ -50,7 +50,7 @@ test.describe('M3: Results tab', () => {
     await expect(valueEl).toHaveClass(/score-tile__value--accent/)
   })
 
-  test('M3.4 Annual matching score tile shows ~67.33% in header tiles area', async ({ page }) => {
+  test('M3.4 Annual (volumetric) score tile shows ~100.74% in header tiles area', async ({ page }) => {
     const tile = page.locator('[data-testid="tile-annual-score"]')
     await expect(tile).toBeVisible()
 
@@ -58,9 +58,10 @@ test.describe('M3: Results tab', () => {
     const tilesArea = page.locator('[data-testid="results-tiles"]')
     await expect(tilesArea.locator('[data-testid="tile-annual-score"]')).toBeVisible()
 
+    // Volumetric: 50,370 MWh generation ÷ 50,000 MWh demand, regardless of matching method
     const text = await tile.locator('.score-tile__value').textContent()
     const num = parseFloat(text!.replace(/[^0-9.]/g, ''))
-    expect(Math.abs(num - 67.33)).toBeLessThan(0.01)
+    expect(Math.abs(num - 100.74)).toBeLessThan(0.01)
 
     // Label should mention Annual or volumetric
     await expect(tile.locator('.score-tile__label')).toContainText('Annual')

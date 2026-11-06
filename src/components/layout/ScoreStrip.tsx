@@ -1,4 +1,4 @@
-/** Persistent strip showing whole-portfolio totals and matching scores. */
+/** Persistent strip showing whole-portfolio totals; matching scores appear only on the Results tab. */
 
 import { usePortfolioContext } from '../../state/usePortfolioContext'
 import { granularityLabel } from '../results/granularityLabel'
@@ -7,7 +7,7 @@ function formatMWh(n: number): string {
   return n.toLocaleString('en-GB', { maximumFractionDigits: 0 })
 }
 
-export function ScoreStrip() {
+export function ScoreStrip({ showScores }: { showScores: boolean }) {
   const { state, engineResult } = usePortfolioContext()
 
   if (!engineResult) return null
@@ -21,7 +21,7 @@ export function ScoreStrip() {
   return (
     <div className="score-strip" data-testid="score-strip">
       <div className="score-strip__caption" data-testid="score-strip-caption">
-        Whole portfolio · {label}
+        Whole portfolio{showScores ? ` · ${label}` : ''}
       </div>
       <div className="score-strip__items">
         <div className="score-strip__item">
@@ -36,19 +36,23 @@ export function ScoreStrip() {
             {formatMWh(totalGeneration)} <span className="score-strip__unit">MWh</span>
           </span>
         </div>
-        <div className="score-strip__divider" aria-hidden="true" />
-        <div className="score-strip__item" title={`Granularity: ${label}`}>
-          <span className="score-strip__label">Hourly matching score</span>
-          <span className="score-strip__value" data-testid="hourly-score">
-            {hourly.toFixed(2)} %
-          </span>
-        </div>
-        <div className="score-strip__item" title={`Granularity: ${label}`}>
-          <span className="score-strip__label">Annual matching score</span>
-          <span className="score-strip__value" data-testid="annual-score">
-            {annual.toFixed(2)} %
-          </span>
-        </div>
+        {showScores && (
+          <>
+            <div className="score-strip__divider" aria-hidden="true" />
+            <div className="score-strip__item" title={`Granularity: ${label}`}>
+              <span className="score-strip__label">Hourly matching score</span>
+              <span className="score-strip__value" data-testid="hourly-score">
+                {hourly.toFixed(2)} %
+              </span>
+            </div>
+            <div className="score-strip__item" title={`Granularity: ${label}`}>
+              <span className="score-strip__label">Annual matching score</span>
+              <span className="score-strip__value" data-testid="annual-score">
+                {annual.toFixed(2)} %
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
