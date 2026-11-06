@@ -186,10 +186,10 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
 
     // Check exact labels (four options since M3c added "As produced (no cap)")
     const labels = page.locator('.granularity-selector__label')
-    await expect(labels.nth(0)).toHaveText('Hourly matching only')
-    await expect(labels.nth(1)).toHaveText('Monthly matching target')
-    await expect(labels.nth(2)).toHaveText('Annual matching target')
-    await expect(labels.nth(3)).toHaveText('As produced (no cap)')
+    await expect(labels.nth(0)).toHaveText('As produced (no cap)')
+    await expect(labels.nth(1)).toHaveText('Annual matching target')
+    await expect(labels.nth(2)).toHaveText('Monthly matching target')
+    await expect(labels.nth(3)).toHaveText('Hourly matching only')
 
     // Each should have a description paragraph
     const descs = page.locator('.granularity-selector__desc')

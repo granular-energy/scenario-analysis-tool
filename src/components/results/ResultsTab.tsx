@@ -338,7 +338,7 @@ export function ResultsTab() {
           label="Excess"
           value={formatNumber(Math.round(summary.totalExcessMWh))}
           unit="MWh"
-          tooltip="Energy generated and allocated but not consumed because it arrived in hours when demand was already met. At hourly granularity this is always zero because allocation never exceeds demand in any single hour."
+          tooltip="Generation allocated to a consumer that arrived in hours when its demand was already met. It counts towards the annual score but not the hourly score. Different from surplus generation, which is never allocated at all. Always zero with hourly matching only."
           testId="tile-excess"
         />
         <ScoreTile
@@ -407,6 +407,12 @@ export function ResultsTab() {
           data-testid="chart-sankey"
         >
           <h3 className="results-tab__chart-title">Energy flow</h3>
+          <p className="results-tab__sankey-note" data-testid="sankey-outcomes-note">
+            <strong>Matched</strong> is allocated generation consumed in the same hour. <strong>Excess</strong> is
+            allocated to a consumer but arrives in an hour where its demand is already covered, so it counts
+            towards the annual score but not the hourly score. <strong>Surplus generation</strong> never reaches a
+            consumer: the matching cap or the allocation matrix left it unassigned.
+          </p>
           {consumerResult && (
             <p className="results-tab__sankey-note" data-testid="sankey-surplus-note">
               Surplus generation is a portfolio-level concept and is not shown in the per-consumer view.

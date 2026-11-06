@@ -12,19 +12,18 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await page.click('[data-tab="allocation"]')
     const note = page.locator('[data-testid="how-allocation-works"]')
     await expect(note).toBeVisible()
-    await expect(note).toContainText(
-      "In all four methods a generator's allocation follows its own hourly output shape",
-    )
-    await expect(note).toContainText('every hour, every month, the whole year, or not at all')
+    await expect(note).toContainText('never moved into the hours that happen to need it')
+    await expect(note).toContainText('not at all, the whole year, every month, or every hour')
+    await expect(note).toContainText('Hourly matching is the one method that clips the shape')
   })
 
-  test('M3c.7 Fourth radio option is "As produced (no cap)" with correct description', async ({ page }) => {
+  test('M3c.7 First radio option is "As produced (no cap)" with correct description', async ({ page }) => {
     await page.click('[data-tab="allocation"]')
     const selector = page.locator('[data-testid="granularity-selector"]')
     const options = selector.locator('.granularity-selector__option')
     await expect(options).toHaveCount(4)
 
-    const fourthOption = options.nth(3)
+    const fourthOption = options.nth(0)
     const label = fourthOption.locator('.granularity-selector__label')
     await expect(label).toHaveText('As produced (no cap)')
 
@@ -40,19 +39,18 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await page.click('[data-tab="allocation"]')
     const options = page.locator('.granularity-selector__option')
 
-    // Hourly
-    const hourlyDesc = options.nth(0).locator('.granularity-selector__desc')
-    await expect(hourlyDesc).toContainText('capped at that hour\u2019s consumption')
+    // Order runs least to most strict: as-produced, annual, monthly, hourly
+    const annualDesc = options.nth(1).locator('.granularity-selector__desc')
+    await expect(annualDesc).toContainText('annual consumption')
+    await expect(annualDesc).toContainText('shape')
 
-    // Monthly
-    const monthlyDesc = options.nth(1).locator('.granularity-selector__desc')
-    await expect(monthlyDesc).toContainText('capped at that month\u2019s consumption')
+    const monthlyDesc = options.nth(2).locator('.granularity-selector__desc')
+    await expect(monthlyDesc).toContainText('limited to that month\u2019s consumption')
     await expect(monthlyDesc).toContainText('shape')
 
-    // Annual
-    const annualDesc = options.nth(2).locator('.granularity-selector__desc')
-    await expect(annualDesc).toContainText('capped at annual consumption')
-    await expect(annualDesc).toContainText('shape')
+    const hourlyDesc = options.nth(3).locator('.granularity-selector__desc')
+    await expect(hourlyDesc).toContainText('limited to that hour\u2019s consumption')
+    await expect(hourlyDesc).toContainText('clipped rather than preserved')
   })
 
   test('M3c.9 Selecting as-produced dispatches and re-runs the engine', async ({ page }) => {
@@ -77,7 +75,7 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await page.click('[data-tab="results"]')
     const granularity = page.locator('[data-testid="results-granularity"]')
     await expect(granularity).toContainText(
-      'Hourly matching only · capped at hourly consumption · no over-allocation possible',
+      'Hourly matching only · capped at hourly consumption · generator shape clipped at hourly demand',
     )
   })
 

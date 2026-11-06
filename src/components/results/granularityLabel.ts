@@ -15,7 +15,7 @@ const INFO: Record<MatchingGranularity, GranularityInfo> = {
   hourly: {
     label: 'Hourly matching only',
     capRule: 'capped at hourly consumption',
-    shapeRule: 'no over-allocation possible',
+    shapeRule: 'generator shape clipped at hourly demand',
   },
   monthly: {
     label: 'Monthly matching target',

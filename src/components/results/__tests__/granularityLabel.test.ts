@@ -27,7 +27,7 @@ describe('granularityLabel', () => {
 describe('granularityInfo', () => {
   it('returns cap and shape rules for each granularity', () => {
     expect(granularityInfo('hourly').capRule).toBe('capped at hourly consumption')
-    expect(granularityInfo('hourly').shapeRule).toBe('no over-allocation possible')
+    expect(granularityInfo('hourly').shapeRule).toBe('generator shape clipped at hourly demand')
 
     expect(granularityInfo('monthly').capRule).toBe('allocation capped at monthly consumption')
     expect(granularityInfo('monthly').shapeRule).toBe('generator shape preserved')
@@ -43,7 +43,7 @@ describe('granularityInfo', () => {
 describe('granularityHeaderLine', () => {
   it('returns the full header line for hourly', () => {
     expect(granularityHeaderLine('hourly')).toBe(
-      'Hourly matching only · capped at hourly consumption · no over-allocation possible',
+      'Hourly matching only · capped at hourly consumption · generator shape clipped at hourly demand',
     )
   })
 

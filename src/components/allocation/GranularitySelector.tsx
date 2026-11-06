@@ -23,35 +23,37 @@ const OPTIONS: {
   descriptionParts: (string | 'SHAPE_TIP')[]
 }[] = [
   {
-    value: 'hourly',
-    label: 'Hourly matching only',
+    value: 'as-produced',
+    label: 'As produced (no cap)',
     descriptionParts: [
-      'Aims for 100 % matching in every hour. Allocation in each hour is capped at that hour\u2019s consumption, so there is never over-allocation. The hourly and annual scores are the same number. This is 24/7 hourly matching, the strictest standard.',
-    ],
-  },
-  {
-    value: 'monthly',
-    label: 'Monthly matching target',
-    descriptionParts: [
-      'Aims for 100 % matching in every calendar month, as close as supply allows. Allocation in each month is capped at that month\u2019s consumption and keeps the generator\u2019s own hourly shape (',
+      'The consumer receives its full share of each generator\u2019s output in every hour, with nothing held back. Generator shape fully preserved (',
       'SHAPE_TIP',
-      '), so within the month some hours are over-supplied (excess) and others fall short. The hourly score shows how much of a 100 %-monthly-matched position holds hour by hour.',
+      '). Excess appears wherever generation exceeds consumption in the hour; nothing is left as surplus. This is what a pay-as-produced PPA delivers.',
     ],
   },
   {
     value: 'annual',
     label: 'Annual matching target',
     descriptionParts: [
-      'Aims for 100 % matching over the whole year, as with annual certificates (GoOs, REGOs). Allocation is capped at annual consumption and keeps the generator\u2019s shape (',
+      'Allocates up to 100 % of each consumer\u2019s annual consumption, as with annual certificates (GoOs, REGOs). The generator\u2019s hourly shape is kept (',
       'SHAPE_TIP',
-      '). The annual score can reach 100 % while the hourly score shows how much of that claim holds hour by hour.',
+      '), so some hours are over-supplied (excess) and others short (unmatched). Generation beyond annual consumption is left as surplus.',
     ],
   },
   {
-    value: 'as-produced',
-    label: 'As produced (no cap)',
+    value: 'monthly',
+    label: 'Monthly matching target',
     descriptionParts: [
-      'The consumer receives its full share of each generator\u2019s output in every hour, with nothing held back. This is what a pay-as-produced PPA delivers. Excess appears wherever generation exceeds consumption in the hour.',
+      'As annual, but the cap applies month by month: allocation in each month is limited to that month\u2019s consumption, keeping the generator\u2019s shape within the month (',
+      'SHAPE_TIP',
+      '). Generation beyond a month\u2019s consumption is surplus and cannot be carried into another month.',
+    ],
+  },
+  {
+    value: 'hourly',
+    label: 'Hourly matching only',
+    descriptionParts: [
+      'Allocation in each hour is limited to that hour\u2019s consumption, so there is never any excess. The generator\u2019s shape is clipped rather than preserved: output above demand in an hour is left as surplus. This is 24/7 hourly matching, the strictest standard.',
     ],
   },
 ]
@@ -64,8 +66,8 @@ export function GranularitySelector() {
       <legend className="granularity-selector__legend">Matching granularity</legend>
       <p className="granularity-selector__intro">
         In every method, generation is allocated to each consumer largest generator first, up to the
-        consumer's consumption in the matching window, keeping each generator's hourly shape. This is how the
-        Granular platform allocates.
+        consumer's consumption in the matching window. This is how the Granular platform allocates. The methods
+        run from least to most strict.
       </p>
       <div className="granularity-selector__options">
         {OPTIONS.map((opt) => (
@@ -97,9 +99,11 @@ export function GranularitySelector() {
       <div className="granularity-selector__note" data-testid="how-allocation-works">
         <strong>How allocation works</strong>
         <p>
-          In all four methods a generator's allocation follows its own hourly output shape — it is never moved
-          into the hours that happen to need it. The methods differ only in the window within which allocation
-          is capped at consumption: every hour, every month, the whole year, or not at all.
+          A generator's allocation is never moved into the hours that happen to need it. The methods differ in
+          the window within which allocation is capped at consumption: not at all, the whole year, every month,
+          or every hour. With no cap, an annual cap or a monthly cap the generator's hourly shape is preserved,
+          so over-supplied hours show as excess. Hourly matching is the one method that clips the shape: nothing
+          above an hour's demand is allocated, so there is no excess, only surplus.
         </p>
       </div>
     </fieldset>
