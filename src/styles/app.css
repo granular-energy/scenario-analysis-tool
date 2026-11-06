@@ -78,11 +78,39 @@
 /* ---- Score strip ---- */
 .score-strip {
   display: flex;
-  gap: var(--ge-space-lg);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   padding: var(--ge-space-sm) var(--ge-gutter);
   background: var(--ge-teal-bg);
+}
+
+.score-strip__caption {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ge-text-muted);
+}
+
+.score-strip__items {
+  display: flex;
+  gap: var(--ge-space-lg);
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
+}
+
+.score-strip__divider {
+  width: 1px;
+  height: 36px;
+  background: var(--ge-border);
+}
+
+.score-strip__unit {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ge-text-muted);
 }
 
 .score-strip__item {
@@ -966,8 +994,15 @@
   }
 
   .score-strip {
-    gap: var(--ge-space-md);
     padding: var(--ge-space-xs) var(--ge-gutter);
+  }
+
+  .score-strip__items {
+    gap: var(--ge-space-md);
+  }
+
+  .score-strip__divider {
+    display: none;
   }
 
   .score-strip__value {
