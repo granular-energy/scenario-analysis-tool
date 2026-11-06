@@ -1,4 +1,4 @@
-/** Persistent strip showing whole-portfolio totals; matching scores appear only on the Results tab. */
+/** Persistent strip showing whole-portfolio totals; matching scores appear only on the Allocation tab (the Results tab has its own tiles). */
 
 import { usePortfolioContext } from '../../state/usePortfolioContext'
 import { granularityLabel } from '../results/granularityLabel'

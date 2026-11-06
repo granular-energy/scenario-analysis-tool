@@ -34,7 +34,7 @@ export default function App() {
       <div className="app-shell">
         <Header />
         <TabBar active={activeTab} onChange={setActiveTab} />
-        <ScoreStrip showScores={activeTab === 'results'} />
+        <ScoreStrip showScores={activeTab === 'allocation'} />
         <main className="app-main">
           <TabContent tab={activeTab} />
         </main>

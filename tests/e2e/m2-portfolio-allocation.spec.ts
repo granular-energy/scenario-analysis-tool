@@ -186,18 +186,18 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
     const selector = page.locator('[data-testid="granularity-selector"]')
     await expect(selector).toBeVisible()
 
-    // Scores are only shown on the Results tab, so read them there after each switch
+    // Get initial hourly score
     const hourlyScore = page.locator('[data-testid="hourly-score"]')
-    const readScore = async (granularity: string) => {
-      await page.click('[data-tab="allocation"]')
-      await page.click(`input[value="${granularity}"]`)
-      await page.click('[data-tab="results"]')
-      return hourlyScore.textContent()
-    }
-    const initialValue = await readScore('hourly')
-    const monthlyValue = await readScore('monthly')
+    const initialValue = await hourlyScore.textContent()
+
+    // Switch to monthly
+    await page.click('input[value="monthly"]')
+    const monthlyValue = await hourlyScore.textContent()
     expect(monthlyValue).not.toBe(initialValue)
-    const annualValue = await readScore('annual')
+
+    // Switch to annual
+    await page.click('input[value="annual"]')
+    const annualValue = await hourlyScore.textContent()
     expect(annualValue).not.toBe(monthlyValue)
   })
 
@@ -236,9 +236,7 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
     await expect(page.locator('input[value="hourly"]')).toBeChecked()
   })
 
-  test('M2.21 Score strip shows portfolio totals on Portfolio and Allocation tabs, scores only on Results', async ({
-    page,
-  }) => {
+  test('M2.21 Score strip shows portfolio totals on every tab, scores only on Allocation', async ({ page }) => {
     const strip = page.locator('[data-testid="score-strip"]')
     await expect(strip).toBeVisible()
     await expect(strip).toContainText('Whole portfolio')
@@ -248,14 +246,16 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
 
     await page.click('[data-tab="allocation"]')
     await expect(strip).toBeVisible()
-    await expect(page.locator('[data-testid="hourly-score"]')).toHaveCount(0)
-
-    await page.click('[data-tab="results"]')
     await expect(page.locator('[data-testid="hourly-score"]')).toBeVisible()
+
+    // Results has its own tiles, so the strip drops the scores there
+    await page.click('[data-tab="results"]')
+    await expect(strip).toBeVisible()
+    await expect(page.locator('[data-testid="hourly-score"]')).toHaveCount(0)
   })
 
   test('M2.22 Demo portfolio shows correct hourly and annual scores', async ({ page }) => {
-    await page.click('[data-tab="results"]')
+    await page.click('[data-tab="allocation"]')
     const hourlyScore = page.locator('[data-testid="hourly-score"]')
     const annualScore = page.locator('[data-testid="annual-score"]')
 

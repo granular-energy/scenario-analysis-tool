@@ -36,7 +36,7 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
   })
 
   test('M3b.3 Demo portfolio scores match golden fixture', async ({ page }) => {
-    await page.click('[data-tab="results"]')
+    await page.click('[data-tab="allocation"]')
     const hourlyScore = page.locator('[data-testid="hourly-score"]')
     const annualScore = page.locator('[data-testid="annual-score"]')
 
