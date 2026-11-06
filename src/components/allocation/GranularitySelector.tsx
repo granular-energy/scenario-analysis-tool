@@ -1,4 +1,4 @@
-/** Matching granularity selector with full explanations of each method and shape-preservation note. */
+/** Allocation method selector with full explanations of each method and shape-preservation note. */
 
 import { usePortfolioContext } from '../../state/usePortfolioContext'
 import type { MatchingGranularity } from '../../engine/types'
@@ -63,11 +63,10 @@ export function GranularitySelector() {
 
   return (
     <fieldset className="granularity-selector" data-testid="granularity-selector">
-      <legend className="granularity-selector__legend">Matching granularity</legend>
+      <legend className="granularity-selector__legend">Allocation method</legend>
       <p className="granularity-selector__intro">
-        In every method, generation is allocated to each consumer largest generator first, up to the
-        consumer's consumption in the matching window. This is how the Granular platform allocates. The methods
-        run from least to most strict.
+        Choose how generation is allocated to each consumer. These are four simple allocation methods, listed
+        from least to most strict. Many other methods exist and are available in the Granular Energy platform.
       </p>
       <div className="granularity-selector__options">
         {OPTIONS.map((opt) => (
@@ -99,11 +98,11 @@ export function GranularitySelector() {
       <div className="granularity-selector__note" data-testid="how-allocation-works">
         <strong>How allocation works</strong>
         <p>
-          A generator's allocation is never moved into the hours that happen to need it. The methods differ in
-          the window within which allocation is capped at consumption: not at all, the whole year, every month,
-          or every hour. With no cap, an annual cap or a monthly cap the generator's hourly shape is preserved,
-          so over-supplied hours show as excess. Hourly matching is the one method that clips the shape: nothing
-          above an hour's demand is allocated, so there is no excess, only surplus.
+          A generator's output is never moved into the hours that happen to need it. The methods differ in the
+          window within which allocation is capped at consumption: not at all, the whole year, every month, or
+          every hour. With no cap, an annual cap or a monthly cap the generator's hourly shape is preserved,
+          so over-supplied hours show as excess. Hourly matching is the one method that clips the shape:
+          nothing above an hour's demand is allocated, so there is no excess, only surplus.
         </p>
       </div>
     </fieldset>

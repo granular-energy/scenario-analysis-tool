@@ -174,15 +174,17 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
     await expect(firstComputed).toContainText('50.0')
   })
 
-  // ---- Matching granularity selector ----
+  // ---- Allocation method selector ----
 
   test('M3b.10 Granularity selector has intro text and full labels', async ({ page }) => {
     await page.click('[data-tab="allocation"]')
 
     // Check intro text
     const intro = page.locator('.granularity-selector__intro')
-    await expect(intro).toContainText('In every method, generation is allocated to each consumer')
-    await expect(intro).toContainText('Granular platform allocates')
+    await expect(page.locator('.granularity-selector__legend')).toHaveText('Allocation method')
+    await expect(intro).toContainText('four simple allocation methods')
+    await expect(intro).toContainText('available in the Granular Energy platform')
+    await expect(intro).not.toContainText('largest generator')
 
     // Check exact labels (four options since M3c added "As produced (no cap)")
     const labels = page.locator('.granularity-selector__label')
