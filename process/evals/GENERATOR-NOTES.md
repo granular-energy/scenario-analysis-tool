@@ -19,12 +19,14 @@ All 19 M6 criteria addressed. Summary of changes:
    - `getSignedUpTimestamp()` — returns raw timestamp or null
 
 3. **`src/components/layout/SignUpGate.tsx`** (M6.2–M6.12) — React component:
-   - Full-screen modal with blurred, pointer-events-none backdrop
-   - Tool description (two sentences) + dev-mode notice for placeholder form ID
-   - "Continue without signing up" button sets flag and dismisses
+   - **Always loads the HubSpot embed script first** (`'loading'` → script loaded → branch on `isHubSpotConfigured()`). This ensures the error state is reachable even with the placeholder form ID, by blocking the script network request.
+   - If script loads and form ID is placeholder → `'dev'` state with "Development mode" notice and "Continue without signing up" button
+   - If script loads and form ID is configured → `'form'` state with embedded HubSpot form
+   - If script fails (network blocked or 5-second timeout) → `'error'` state with "could not load" message, contact link, no Continue button (tool stays locked)
+   - Full-screen modal overlay with blurred, pointer-events-none backdrop
    - `?signedUp=1` query param bypass, idempotent (preserves existing timestamp)
-   - HubSpot form loading with 5-second timeout; error fallback with contact link
-   - Focus trap (Tab/Shift+Tab cycling) with auto-focus on open
+   - Focus trap: Tab/Shift+Tab cycling within modal; redirects focus inside modal if active element is outside
+   - Auto-focus on first focusable element when state changes
    - Responsive at 375px with 44px touch targets
    - All design tokens from CSS variables, zero hardcoded hex values
 
@@ -40,21 +42,13 @@ All 19 M6 criteria addressed. Summary of changes:
 
 ### Existing test updates
 
-9. **All 8 existing e2e spec files updated** (M6.15) — Added `localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())` after every `localStorage.clear()` call:
-   - `m2-portfolio-allocation.spec.ts`
-   - `m3-results.spec.ts`
-   - `m3b-enhancements.spec.ts`
-   - `m3c-as-produced.spec.ts`
-   - `m4-compare.spec.ts`
-   - `m4-results-actions.spec.ts`
-   - `m4-pdf-report.spec.ts`
-   - `m5-full-flow.spec.ts`
+9. **All 8 existing e2e spec files updated** (M6.15) — Added `localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())` after every `localStorage.clear()` call
 
 ### Downloads
 
-10. **PDF/JSON downloads ungated** (M6.13, M6.14) — No per-download gate existed; the whole-app gate is the only gate. Downloads work freely once past the sign-up gate.
+10. **PDF/JSON downloads ungated** (M6.13, M6.14) — No per-download gate existed; the whole-app gate is the only gate
 
-11. **Engine purity preserved** (M6.19) — No imports from config/components/state in `src/engine/`.
+11. **Engine purity preserved** (M6.19) — No imports from config/components/state in `src/engine/`
 
 ## Test results
 
@@ -69,7 +63,6 @@ Nothing — all 19 criteria addressed.
 
 ## Notes for the evaluator
 
-- **Dev mode**: Since `HUBSPOT_FORM_ID` is `'REPLACE_WITH_FORM_ID'`, the app always shows the development-mode bypass. The HubSpot form loading and error states are code-complete but cannot be e2e tested without a real form ID.
-- **M6.9 (HubSpot script failure)**: With the placeholder form ID, `isHubSpotConfigured()` returns false, so the app goes straight to dev mode rather than attempting to load the HubSpot script. The error fallback path (timeout, script error) is implemented but only activates when a real form ID is configured. The e2e test verifies the dev-mode path since that's what runs with the placeholder.
-- **Testing the gate**: Navigate to `http://localhost:4173` after clearing localStorage to see the gate. Click "Continue without signing up" to dismiss. Reload to verify persistence. Navigate to `/?signedUp=1` to test URL bypass.
-- **All existing specs**: Each spec's beforeEach sets the signup flag immediately after clearing localStorage, so the gate never blocks them.
+- **M6.9 fix from previous attempt**: The component now always starts in `'loading'` state and attempts to load the HubSpot embed script, regardless of whether the form ID is a placeholder. This means blocking `**/js-eu1.hsforms.net/**` via `page.route()` will trigger `script.onerror` → error state, even with the placeholder form ID. The error state shows "could not load" text, a `granular-energy.com/contact` link, and no Continue button.
+- **Dev mode**: The HubSpot script loads from the CDN, and once it loads, `isHubSpotConfigured()` returns false for the placeholder → dev mode with Continue button. This path works in all tests that don't block the network.
+- **Testing the gate**: Navigate to `http://localhost:4173` after clearing localStorage to see the gate. The script loads from `js-eu1.hsforms.net`, detects the placeholder form ID, and shows dev mode. Click "Continue without signing up" to dismiss. Navigate to `/?signedUp=1` to bypass.

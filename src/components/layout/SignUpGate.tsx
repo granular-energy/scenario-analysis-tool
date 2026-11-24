@@ -12,8 +12,13 @@ type GateState = 'loading' | 'form' | 'dev' | 'error' | 'dismissed'
 
 /**
  * Full-screen sign-up gate that blocks the app on first visit.
- * Shows either the HubSpot embedded form or a development-mode bypass.
- * Remembers dismissal in localStorage so returning visitors skip it.
+ *
+ * Always attempts to load the HubSpot embed script first. If the script
+ * loads successfully and the form ID is configured, the embedded form is
+ * shown. If the script loads but the form ID is a placeholder, the
+ * development-mode bypass is shown. If the script fails to load (network
+ * blocked or 5-second timeout), the error fallback is shown with a contact
+ * link and no bypass — the tool remains locked.
  */
 export function SignUpGate({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GateState>(() => {
@@ -26,7 +31,8 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
       return 'dismissed'
     }
     if (hasSignedUp()) return 'dismissed'
-    if (!isHubSpotConfigured()) return 'dev'
+    // Always start loading — the script must load before we can decide
+    // whether to show the form or the dev-mode bypass
     return 'loading'
   })
 
@@ -34,7 +40,7 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
   const formContainerRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load HubSpot form when in loading state
+  // Load HubSpot embed script. On success, branch on isHubSpotConfigured().
   useEffect(() => {
     if (state !== 'loading') return
 
@@ -42,15 +48,22 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
     script.src = HUBSPOT_EMBED_URL
     script.async = true
 
-    // 5-second timeout for script load failure
+    // 5-second timeout — if the script has not loaded by then, show error
     timeoutRef.current = setTimeout(() => {
       setState('error')
     }, 5000)
 
     script.onload = () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+      // Script loaded. If the form ID is a placeholder, show dev mode.
+      if (!isHubSpotConfigured()) {
+        setState('dev')
+        return
+      }
+
+      // Real form ID — try to create the HubSpot form
       try {
-        // eslint-disable-next-line -- HubSpot global
         const hbspt = (window as unknown as Record<string, unknown>)['hbspt'] as {
           forms: {
             create: (opts: Record<string, unknown>) => void
@@ -100,10 +113,21 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
       const focusable = modal.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       )
-      if (focusable.length === 0) return
+      if (focusable.length === 0) {
+        // No focusable elements — block Tab entirely
+        e.preventDefault()
+        return
+      }
 
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
+
+      // If focus is outside the modal, redirect it inside
+      if (!modal.contains(document.activeElement)) {
+        e.preventDefault()
+        first.focus()
+        return
+      }
 
       if (e.shiftKey) {
         if (document.activeElement === first) {

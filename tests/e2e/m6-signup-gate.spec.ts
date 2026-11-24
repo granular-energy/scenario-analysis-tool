@@ -128,7 +128,7 @@ test.describe('M6: HubSpot sign-up gate', () => {
   test('M6.9 When HubSpot script fails, modal shows error with contact link and no continue button', async ({
     page,
   }) => {
-    // Block HubSpot script
+    // Block HubSpot script so it fails to load
     await page.route('**/js-eu1.hsforms.net/**', (route) => route.abort())
 
     await page.goto('/')
@@ -138,10 +138,16 @@ test.describe('M6: HubSpot sign-up gate', () => {
     const modal = page.locator('[data-testid="signup-modal"]')
     await expect(modal).toBeVisible()
 
-    // With placeholder form ID, we show dev mode instead of loading HubSpot
-    // The error state only triggers when isHubSpotConfigured() is true and the script fails
-    // Since form ID is placeholder, dev mode shows instead — test the dev bypass
-    await expect(modal.getByText('Development mode')).toBeVisible()
+    // Error message about the form not loading
+    await expect(modal.getByText(/could not load|unable to load|failed to load/i)).toBeVisible()
+
+    // Contact link must be visible
+    const contactLink = modal.locator('a[href*="granular-energy.com/contact"]')
+    await expect(contactLink).toBeVisible()
+
+    // No Continue button — the tool remains locked
+    const continueBtn = modal.getByRole('button', { name: /continue without signing up/i })
+    await expect(continueBtn).not.toBeVisible()
   })
 
   test('M6.10 Focus is trapped inside the modal', async ({ page }) => {
@@ -151,6 +157,10 @@ test.describe('M6: HubSpot sign-up gate', () => {
 
     const modal = page.locator('[data-testid="signup-modal"]')
     await expect(modal).toBeVisible()
+
+    // Wait for the Continue button to appear (dev mode loads after HubSpot script resolves)
+    const continueBtn = modal.getByRole('button', { name: /continue without signing up/i })
+    await expect(continueBtn).toBeVisible()
 
     // Press Tab 5 times and verify active element stays inside the modal
     for (let i = 0; i < 5; i++) {
