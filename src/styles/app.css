@@ -1576,12 +1576,23 @@
   animation: contentShow var(--ge-duration-fast) var(--ge-ease);
 }
 
+.signup-gate__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--ge-space-sm);
+  margin-bottom: var(--ge-space-sm);
+}
+
+.signup-gate__logo {
+  flex: 0 0 auto;
+}
+
 .signup-gate__title {
   font-family: var(--ge-font-heading);
   font-weight: 500;
   font-size: 24px;
   color: var(--ge-text-heading);
-  margin: 0 0 var(--ge-space-sm) 0;
+  margin: 0;
 }
 
 .signup-gate__description {

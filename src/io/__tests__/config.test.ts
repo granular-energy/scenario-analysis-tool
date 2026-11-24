@@ -16,16 +16,15 @@ describe('config', () => {
     expect(HUBSPOT_REGION).toBe('eu1')
   })
 
-  it('exports the placeholder form ID', () => {
-    expect(HUBSPOT_FORM_ID).toBe('REPLACE_WITH_FORM_ID')
+  it('exports the published sign-up form ID by default', () => {
+    expect(HUBSPOT_FORM_ID).toBe('8aa9943b-d138-4200-bc7e-d61b3465a59b')
   })
 
-  it('exports the correct embed URL', () => {
-    expect(HUBSPOT_EMBED_URL).toBe('https://js-eu1.hsforms.net/forms/embed/v2.js')
+  it('exports the per-portal embed script URL', () => {
+    expect(HUBSPOT_EMBED_URL).toBe('https://js-eu1.hsforms.net/forms/embed/25772642.js')
   })
 
-  it('isHubSpotConfigured returns false for the placeholder form ID', () => {
-    // With the placeholder value, the form is not configured
-    expect(isHubSpotConfigured()).toBe(false)
+  it('isHubSpotConfigured returns true for the real form ID', () => {
+    expect(isHubSpotConfigured()).toBe(true)
   })
 })

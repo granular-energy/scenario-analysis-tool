@@ -14,8 +14,9 @@ type GateState = 'loading' | 'form' | 'dev' | 'error' | 'dismissed'
  * Full-screen sign-up gate that blocks the app on first visit.
  *
  * Always attempts to load the HubSpot embed script first. If the script
- * loads successfully and the form ID is configured, the embedded form is
- * shown. If the script loads but the form ID is a placeholder, the
+ * loads successfully and the form ID is configured, the embedded form
+ * (an iframe hydrated by the script) is shown and submission is detected
+ * through HubSpot's `hsFormCallback` postMessage events. If the script loads but the form ID is a placeholder, the
  * development-mode bypass is shown. If the script fails to load (network
  * blocked or 5-second timeout), the error fallback is shown with a contact
  * link and no bypass — the tool remains locked.
@@ -37,10 +38,9 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
   })
 
   const modalRef = useRef<HTMLDivElement>(null)
-  const formContainerRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load HubSpot embed script. On success, branch on isHubSpotConfigured().
+  // Load the HubSpot embed script. On success, branch on isHubSpotConfigured().
   useEffect(() => {
     if (state !== 'loading') return
 
@@ -55,38 +55,9 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
 
     script.onload = () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
-
-      // Script loaded. If the form ID is a placeholder, show dev mode.
-      if (!isHubSpotConfigured()) {
-        setState('dev')
-        return
-      }
-
-      // Real form ID — try to create the HubSpot form
-      try {
-        const hbspt = (window as unknown as Record<string, unknown>)['hbspt'] as {
-          forms: {
-            create: (opts: Record<string, unknown>) => void
-          }
-        }
-        if (hbspt?.forms?.create && formContainerRef.current) {
-          hbspt.forms.create({
-            region: HUBSPOT_REGION,
-            portalId: HUBSPOT_PORTAL_ID,
-            formId: HUBSPOT_FORM_ID,
-            target: formContainerRef.current,
-            onFormSubmitted: () => {
-              markSignedUp()
-              setState('dismissed')
-            },
-          })
-          setState('form')
-        } else {
-          setState('error')
-        }
-      } catch {
-        setState('error')
-      }
+      // The script hydrates the `.hs-form-frame` element already in the DOM; with the
+      // placeholder ID that element is not rendered and the dev bypass is shown instead.
+      setState(isHubSpotConfigured() ? 'form' : 'dev')
     }
 
     script.onerror = () => {
@@ -99,6 +70,23 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
+  }, [state])
+
+  // The embedded form runs in an iframe and reports back via postMessage.
+  useEffect(() => {
+    if (state !== 'loading' && state !== 'form') return
+
+    function handleMessage(e: MessageEvent) {
+      const data = e.data as { type?: string; eventName?: string } | null
+      if (!data || data.type !== 'hsFormCallback') return
+      if (data.eventName === 'onFormSubmitted') {
+        markSignedUp()
+        setState('dismissed')
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
   }, [state])
 
   // Focus trap: keep focus inside the modal
@@ -187,7 +175,16 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
         aria-label="Sign up to use the Scenario Analysis Tool"
       >
         <div className="signup-gate__card" ref={modalRef}>
-          <h2 className="signup-gate__title">Scenario Analysis Tool</h2>
+          <div className="signup-gate__brand">
+            <img
+              src="/brand/granular-wave.svg"
+              alt="Granular Energy"
+              className="signup-gate__logo"
+              width={28}
+              height={28}
+            />
+            <h2 className="signup-gate__title">Scenario Analysis Tool</h2>
+          </div>
           <p className="signup-gate__description">
             Explore how well renewable generation matches your electricity demand across different
             time-matching methods. Build a portfolio, set allocations, and compare scenarios.
@@ -208,16 +205,17 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {state === 'loading' && (
-            <div className="signup-gate__loading">
-              <div ref={formContainerRef} />
-              <p className="signup-gate__loading-text">Loading sign-up form...</p>
-            </div>
-          )}
-
-          {state === 'form' && (
-            <div className="signup-gate__form">
-              <div ref={formContainerRef} />
+          {(state === 'loading' || state === 'form') && (
+            <div className="signup-gate__form" data-testid="signup-form">
+              {isHubSpotConfigured() && (
+                <div
+                  className="hs-form-frame"
+                  data-region={HUBSPOT_REGION}
+                  data-form-id={HUBSPOT_FORM_ID}
+                  data-portal-id={HUBSPOT_PORTAL_ID}
+                />
+              )}
+              {state === 'loading' && <p className="signup-gate__loading-text">Loading sign-up form...</p>}
             </div>
           )}
 

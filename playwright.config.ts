@@ -5,5 +5,9 @@ export default defineConfig({
   timeout: 30_000,
   use: { baseURL: 'http://localhost:4173', headless: true },
   // Always build before serving: reusing a leftover preview server ran the suite against stale code
-  webServer: { command: 'npm run build && npm run preview', port: 4173, reuseExistingServer: false },
+  webServer: {
+    command: 'VITE_HUBSPOT_FORM_ID=REPLACE_WITH_FORM_ID npm run build && npm run preview',
+    port: 4173,
+    reuseExistingServer: false,
+  },
 })
