@@ -1,97 +1,75 @@
-# Generator notes — Milestone M5: Polish, QA and launch readiness
+# Generator notes — Milestone M6: HubSpot sign-up gate
 
 ## What was built
 
-All 25 M5 criteria addressed. Summary of changes per criterion:
+All 19 M6 criteria addressed. Summary of changes:
 
-### M5.1 — No hard-coded hex in component files
-- Moved `SERIES_COLOURS` from `CompareColumns.tsx` into `compareChartConfig.ts` as named constant.
-- Replaced inline `'#0F4974'` in `compareChartConfig.ts` with `DEMAND_COLOUR` import from palette.
-- Verified: `grep -rn '#[0-9a-fA-F]{6}' src/components/ --include='*.tsx' --include='*.css'` → zero matches.
+### Core files
 
-### M5.2 — Design tokens
-- Page bg: `var(--ge-page-bg)` on body. Cards: `.content-card` with `var(--ge-card-bg)`, `1px solid var(--ge-border)`, `var(--ge-radius-md)`. Title: `var(--ge-font-heading)`. No changes needed.
+1. **`src/config.ts`** (M6.1, M6.18) — Centralised HubSpot configuration:
+   - `HUBSPOT_PORTAL_ID` = `'25772642'`
+   - `HUBSPOT_REGION` = `'eu1'`
+   - `HUBSPOT_FORM_ID` = `'REPLACE_WITH_FORM_ID'`
+   - `HUBSPOT_EMBED_URL` = `'https://js-eu1.hsforms.net/forms/embed/v2.js'`
+   - `isHubSpotConfigured()` returns `false` for the placeholder string
 
-### M5.3 — Tabular-nums
-- `base.css` already applies on `*` selector. No changes needed.
+2. **`src/io/signupGate.ts`** (M6.5, M6.6, M6.7, M6.8, M6.16) — Gate state helpers:
+   - `hasSignedUp()` — reads `scenario-tool.signedUp` from localStorage, validates ISO format
+   - `markSignedUp()` — writes current timestamp
+   - `getSignedUpTimestamp()` — returns raw timestamp or null
 
-### M5.4 — Form labels / aria-labels
-- Added `aria-label` on `ConsumerSelector` select, `CsvUploadModal` file input, `CompareTab` file inputs.
-- Matrix inputs already had `aria-label` with generator + consumer names.
+3. **`src/components/layout/SignUpGate.tsx`** (M6.2–M6.12) — React component:
+   - Full-screen modal with blurred, pointer-events-none backdrop
+   - Tool description (two sentences) + dev-mode notice for placeholder form ID
+   - "Continue without signing up" button sets flag and dismisses
+   - `?signedUp=1` query param bypass, idempotent (preserves existing timestamp)
+   - HubSpot form loading with 5-second timeout; error fallback with contact link
+   - Focus trap (Tab/Shift+Tab cycling) with auto-focus on open
+   - Responsive at 375px with 44px touch targets
+   - All design tokens from CSS variables, zero hardcoded hex values
 
-### M5.5 — Keyboard tabs
-- `TabBar.tsx`: WAI-ARIA tab pattern with roving tabindex, arrow/Home/End keys, teal focus-visible ring.
-- `App.tsx`: `role="tabpanel"`, `id`, `aria-labelledby` on main.
+4. **`src/App.tsx`** — Wrapped entire app with `<SignUpGate>` inside `<PortfolioProvider>`
 
-### M5.6 — WCAG contrast
-- Body text `#56514E` on `#FBFAF9` = 7:1 (AA). Muted `#897F78` on white = 4.5:1 (AA). No changes needed.
+5. **`src/styles/app.css`** — Gate-specific CSS using only design tokens
 
-### M5.7 — 375px mobile
-- Existing mobile styles handle layout. Added `min-height: 44px` to `.btn-primary`, `.btn-secondary`, `.tab-bar__tab` for touch targets. Matrix `overflow-x: auto`.
-- Fixed `.member-card__remove` buttons: added `min-height: 44px; min-width: 44px` (was 25px, below 44px requirement). All buttons now meet the 44px touch target on mobile.
+### Tests
 
-### M5.8 — 768px tablet
-- Added 2×2 grid for `.results-tab__tiles` at 640–1023px. Portfolio panels already side-by-side at 768px+.
+6. **`src/io/__tests__/signupGate.test.ts`** — 10 unit tests for gate state logic (M6.16)
+7. **`src/io/__tests__/config.test.ts`** — 5 unit tests for config exports (M6.1)
+8. **`tests/e2e/m6-signup-gate.spec.ts`** — 11 e2e tests covering M6.2–M6.14
 
-### M5.9 / M5.10 — PDF chart upgrade
-- `pdfReport.ts`: new `renderChartToImage()` creates off-screen Highcharts chart → SVG → 2x PNG.
-- Single PDF uses `buildMonthlyBreakdownConfig()`. Comparison PDF uses `buildCompareChartConfig()`.
+### Existing test updates
 
-### M5.11 — Results header with allocation method
-- Header shows e.g. "Hourly matching only · capped at hourly consumption · generator shape clipped at hourly demand".
+9. **All 8 existing e2e spec files updated** (M6.15) — Added `localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())` after every `localStorage.clear()` call:
+   - `m2-portfolio-allocation.spec.ts`
+   - `m3-results.spec.ts`
+   - `m3b-enhancements.spec.ts`
+   - `m3c-as-produced.spec.ts`
+   - `m4-compare.spec.ts`
+   - `m4-results-actions.spec.ts`
+   - `m4-pdf-report.spec.ts`
+   - `m5-full-flow.spec.ts`
 
-### M5.12 — British English
-- Grep for American spellings in `.tsx` → zero matches. No exclamation marks.
+### Downloads
 
-### M5.13 — Explanatory copy
-- Collapsible `<details>` section on Results tab: hourly vs annual scores, shape preservation, demo scenario.
+10. **PDF/JSON downloads ungated** (M6.13, M6.14) — No per-download gate existed; the whole-app gate is the only gate. Downloads work freely once past the sign-up gate.
 
-### M5.14 — Lighthouse Performance
-- Lazy-loaded profiles reduce initial bundle by ~1.5MB.
+11. **Engine purity preserved** (M6.19) — No imports from config/components/state in `src/engine/`.
 
-### M5.15 — Lazy-load profiles
-- `import.meta.glob` changed from eager to lazy. 16 separate chunks in build output.
+## Test results
 
-### M5.16 — Engine < 50ms
-- Inlined hourly allocation path: skip 8,760 window objects, use insertion sort (N≤5), simplify scale.
-- Added warmup run in test for JIT stability.
-
-### M5.17 — Full-flow Playwright spec
-- `tests/e2e/m5-full-flow.spec.ts`: load → demo portfolio → Allocation 100%/100% → Results 67.33%/100.74% → save × 2 → Compare → export JSON.
-
-### M5.18 — All existing e2e pass
-- 80/80 tests pass. Fixed M2.9 sparkline test to wait for async demo loading.
-
-### M5.19 — Build/test/lint green
-- typecheck: 0 errors. tests: 137/137. lint: 0 warnings.
-
-### M5.20 — README
-- Getting started, Deployment, Profiles, Golden fixtures sections.
-
-### M5.21 — FEEDBACK.md
-- All entries marked `[fixed in ...]`.
-
-### M5.22 — Empty states
-- Portfolio: "No consumers/generators yet." Allocation: empty text. Results: centred card. Compare: guidance + import button.
-
-### M5.23 — Error states
-- CSV upload: styled with `var(--ge-error)` + `var(--ge-error-bg)`. Compare import error: same.
-
-### M5.24 — Chart styling
-- `chartDefaults.ts`: Inter font, dotted grids, no borders, legend below. Demand spline: 2px navy, no markers. Bars: borderWidth 0, borderRadius 0.
-
-### M5.25 — Charts responsive
-- Highcharts auto-resizes to container. Legends wrap horizontally below chart.
+- `npm run typecheck` — 0 errors
+- `npm test` — 152 unit tests pass (16 files)
+- `npm run lint` — 0 errors
+- `npm run test:e2e` — 93 e2e tests pass (9 spec files)
 
 ## What could not be finished
 
-Nothing — all 25 criteria addressed.
+Nothing — all 19 criteria addressed.
 
-## How to test
+## Notes for the evaluator
 
-1. `npm run typecheck && npm test && npm run lint` — all exit 0
-2. `npm run build && npx playwright test` — 80/80 e2e pass
-3. Open dev server at 375px: tabs, buttons, matrix all usable; buttons ≥ 44px
-4. Results tab: header shows allocation method + shape rule; help section expands
-5. Download Report: PDF contains Highcharts monthly chart matching screen
-6. Tab through tab bar with keyboard: visible teal focus ring, arrow keys work
+- **Dev mode**: Since `HUBSPOT_FORM_ID` is `'REPLACE_WITH_FORM_ID'`, the app always shows the development-mode bypass. The HubSpot form loading and error states are code-complete but cannot be e2e tested without a real form ID.
+- **M6.9 (HubSpot script failure)**: With the placeholder form ID, `isHubSpotConfigured()` returns false, so the app goes straight to dev mode rather than attempting to load the HubSpot script. The error fallback path (timeout, script error) is implemented but only activates when a real form ID is configured. The e2e test verifies the dev-mode path since that's what runs with the placeholder.
+- **Testing the gate**: Navigate to `http://localhost:4173` after clearing localStorage to see the gate. Click "Continue without signing up" to dismiss. Reload to verify persistence. Navigate to `/?signedUp=1` to test URL bypass.
+- **All existing specs**: Each spec's beforeEach sets the signup flag immediately after clearing localStorage, so the gate never blocks them.
