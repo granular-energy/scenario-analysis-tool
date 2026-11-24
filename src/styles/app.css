@@ -1545,3 +1545,117 @@
     width: 100%;
   }
 }
+
+/* ---- Sign-up gate ---- */
+.signup-gate__backdrop {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+  min-height: 100vh;
+}
+
+.signup-gate__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  padding: var(--ge-space-sm);
+}
+
+.signup-gate__card {
+  background: var(--ge-card-bg);
+  border: 1px solid var(--ge-border);
+  border-radius: var(--ge-radius-md);
+  box-shadow: var(--ge-shadow-lg);
+  max-width: 480px;
+  width: 100%;
+  padding: var(--ge-space-lg);
+  animation: contentShow var(--ge-duration-fast) var(--ge-ease);
+}
+
+.signup-gate__title {
+  font-family: var(--ge-font-heading);
+  font-weight: 500;
+  font-size: 24px;
+  color: var(--ge-text-heading);
+  margin: 0 0 var(--ge-space-sm) 0;
+}
+
+.signup-gate__description {
+  font-family: var(--ge-font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ge-text);
+  margin: 0 0 var(--ge-space-md) 0;
+}
+
+.signup-gate__dev {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ge-space-sm);
+}
+
+.signup-gate__dev-notice {
+  font-family: var(--ge-font-body);
+  font-size: 13px;
+  color: var(--ge-text-muted);
+  margin: 0;
+  padding: var(--ge-space-xs) var(--ge-space-sm);
+  background: var(--ge-warning-bg);
+  border-radius: var(--ge-radius-sm);
+}
+
+.signup-gate__continue-btn {
+  align-self: flex-start;
+  min-height: 44px;
+}
+
+.signup-gate__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ge-space-sm);
+}
+
+.signup-gate__loading-text {
+  font-family: var(--ge-font-body);
+  font-size: 13px;
+  color: var(--ge-text-muted);
+  margin: 0;
+}
+
+.signup-gate__error {
+  padding: var(--ge-space-sm);
+  background: var(--ge-error-bg);
+  border-radius: var(--ge-radius-sm);
+}
+
+.signup-gate__error-text {
+  font-family: var(--ge-font-body);
+  font-size: 14px;
+  color: var(--ge-text);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.signup-gate__error-link {
+  color: var(--ge-teal);
+  text-decoration: underline;
+}
+
+.signup-gate__error-link:hover {
+  color: var(--ge-teal-hover);
+}
+
+/* ---- Sign-up gate responsive: mobile ---- */
+@media (max-width: 639px) {
+  .signup-gate__card {
+    padding: var(--ge-space-md);
+  }
+
+  .signup-gate__title {
+    font-size: 20px;
+  }
+}

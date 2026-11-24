@@ -3,7 +3,10 @@ import { expect, test } from '@playwright/test'
 test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(() => {
+      localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
+    })
     await page.goto('/')
   })
 

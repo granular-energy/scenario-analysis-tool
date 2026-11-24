@@ -4,6 +4,7 @@ import { CompareTab } from './components/compare/CompareTab'
 import { CtaBand } from './components/layout/CtaBand'
 import { Header } from './components/layout/Header'
 import { ScoreStrip } from './components/layout/ScoreStrip'
+import { SignUpGate } from './components/layout/SignUpGate'
 import { TabBar, type TabId } from './components/layout/TabBar'
 import { PortfolioTab } from './components/portfolio/PortfolioTab'
 import { ResultsTab } from './components/results/ResultsTab'
@@ -28,20 +29,22 @@ export default function App() {
 
   return (
     <PortfolioProvider>
-      <div className="app-shell">
-        <Header />
-        <TabBar active={activeTab} onChange={setActiveTab} />
-        <ScoreStrip showScores={activeTab === 'allocation'} />
-        <main
-          className="app-main"
-          id={`tabpanel-${activeTab}`}
-          role="tabpanel"
-          aria-labelledby={`tab-${activeTab}`}
-        >
-          <TabContent tab={activeTab} />
-        </main>
-        <CtaBand />
-      </div>
+      <SignUpGate>
+        <div className="app-shell">
+          <Header />
+          <TabBar active={activeTab} onChange={setActiveTab} />
+          <ScoreStrip showScores={activeTab === 'allocation'} />
+          <main
+            className="app-main"
+            id={`tabpanel-${activeTab}`}
+            role="tabpanel"
+            aria-labelledby={`tab-${activeTab}`}
+          >
+            <TabContent tab={activeTab} />
+          </main>
+          <CtaBand />
+        </div>
+      </SignUpGate>
     </PortfolioProvider>
   )
 }

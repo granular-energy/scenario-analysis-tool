@@ -6,7 +6,10 @@ test.describe('M5: Full demo flow end-to-end', () => {
   }) => {
     // 1. Clear state and load fresh
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(() => {
+      localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
+    })
     await page.goto('/')
 
     // 2. Demo portfolio should be loaded on the Portfolio tab

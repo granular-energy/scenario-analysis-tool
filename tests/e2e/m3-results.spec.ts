@@ -4,7 +4,10 @@ test.describe('M3: Results tab', () => {
   test.beforeEach(async ({ page }) => {
     // Clear localStorage so each test gets the demo portfolio
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(() => {
+      localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
+    })
     await page.goto('/')
     // Navigate to Results tab
     await page.click('[data-tab="results"]')

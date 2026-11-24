@@ -4,7 +4,10 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
   test.beforeEach(async ({ page }) => {
     // Clear localStorage so each test gets the demo portfolio
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(() => {
+      localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
+    })
     await page.goto('/')
   })
 

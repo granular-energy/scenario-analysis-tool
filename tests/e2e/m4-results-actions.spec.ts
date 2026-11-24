@@ -3,7 +3,10 @@ import { expect, test } from '@playwright/test'
 test.describe('M4: Results tab action bar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
+    await page.evaluate(() => {
+      localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
+    })
     await page.goto('/')
     // Navigate to Results tab (demo portfolio has results ready)
     await page.click('[data-tab="results"]')
@@ -105,6 +108,7 @@ test.describe('M4: Results tab action bar', () => {
     // Clear portfolio so there are no results
     await page.evaluate(() => {
       localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
     })
     await page.goto('/')
 
