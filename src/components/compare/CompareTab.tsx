@@ -16,6 +16,8 @@ import { runEngine } from '../../engine'
 import type { Consumer, Generator } from '../../engine/types'
 import type { PortfolioConsumer, PortfolioGenerator } from '../../state/portfolioTypes'
 import { loadScenarios, saveScenarios, removeScenario, renameScenario } from '../../state/scenarioStore'
+import { generateComparisonPdf } from '../report/pdfReport'
+import type { ComparisonScenario } from '../report/pdfReport'
 import { CompareColumns } from './CompareColumns'
 import { CompareChart } from './CompareChart'
 import { AssumptionsTable } from './AssumptionsTable'
@@ -149,12 +151,17 @@ export function CompareTab() {
     e.target.value = ''
   }, [])
 
-  const handleDownloadPdf = useCallback(() => {
-    // PDF generation will be wired up separately
-    console.log('Download comparison PDF requested')
-  }, [])
-
   const selectedScenarios = scenarios.filter((s) => validSelectedIds.includes(s.id))
+
+  const handleDownloadPdf = useCallback(() => {
+    if (selectedScenarios.length < 2) return
+    const pdfScenarios: ComparisonScenario[] = selectedScenarios.map((s) => ({
+      name: s.name,
+      portfolio: s.portfolio,
+      results: s.results,
+    }))
+    void generateComparisonPdf(pdfScenarios)
+  }, [selectedScenarios])
 
   // Guidance state: fewer than 2 saved scenarios
   if (scenarios.length < 2) {
