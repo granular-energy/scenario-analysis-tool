@@ -4,10 +4,14 @@
  * The consumer selector is local UI state — switching it does not re-run the engine.
  */
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import type { ConsumerResult, EngineResult, MatchingSummary } from '../../engine/types'
+import { generateId, createScenarioResultsSummary, exportScenarioFile } from '../../io/scenarioIO'
+import type { SavedScenario } from '../../io/scenarioIO'
+import { addScenario, loadScenarios } from '../../state/scenarioStore'
 import { usePortfolioContext } from '../../state/usePortfolioContext'
+import { generateSingleScenarioPdf } from '../report/pdfReport'
 import { ConsumerSelector } from './ConsumerSelector'
 import { ScoreTile } from './ScoreTile'
 import { Chart } from './Chart'
@@ -145,10 +149,75 @@ function computeHourlyExcess(allocatedMWh: readonly number[], matchedMWh: readon
   return excess
 }
 
+/** Trigger a browser download of a JSON object as a file. */
+function downloadJsonFile(data: object, filename: string): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export function ResultsTab() {
-  const { state, engineResult } = usePortfolioContext()
+  const { state, dispatch, engineResult } = usePortfolioContext()
   const [selectedConsumerId, setSelectedConsumerId] = useState<string | null>(null)
   const [dayIndex, setDayIndex] = useState(DEFAULT_DAY_INDEX)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+  const [loadOpen, setLoadOpen] = useState(false)
+  const [savedScenarios, setSavedScenarios] = useState<readonly SavedScenario[]>([])
+
+  /** Save the current portfolio and results as a named scenario in localStorage. */
+  const handleSave = useCallback(() => {
+    if (!engineResult) return
+    const existing = loadScenarios()
+    const defaultName = `Scenario ${existing.length + 1}`
+    const name = window.prompt('Scenario name:', defaultName)
+    if (!name) return
+    const scenario: SavedScenario = {
+      id: generateId(),
+      name,
+      savedAt: new Date().toISOString(),
+      portfolio: state,
+      results: createScenarioResultsSummary(engineResult),
+    }
+    addScenario(scenario)
+    setSaveMsg(`Saved "${name}"`)
+    setTimeout(() => setSaveMsg(null), 2000)
+  }, [engineResult, state])
+
+  /** Download the current portfolio as a self-contained JSON file. */
+  const handleDownloadJson = useCallback(() => {
+    if (!engineResult) return
+    const existing = loadScenarios()
+    const defaultName = `Scenario ${existing.length + 1}`
+    const file = exportScenarioFile(defaultName, state)
+    const safeName = defaultName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+    downloadJsonFile(file, `${safeName}.json`)
+  }, [engineResult, state])
+
+  /** Download a PDF report. Wrapped so a gate can be added later. */
+  const handleDownloadReport = useCallback(() => {
+    if (!engineResult) return
+    const name = 'Scenario report'
+    void generateSingleScenarioPdf(name, state, engineResult)
+  }, [engineResult, state])
+
+  /** Open the load dropdown, refreshing the list from localStorage. */
+  const handleLoadOpen = useCallback(() => {
+    setSavedScenarios(loadScenarios())
+    setLoadOpen((prev) => !prev)
+  }, [])
+
+  /** Load a saved scenario into the current portfolio. */
+  const handleLoadScenario = useCallback(
+    (scenario: SavedScenario) => {
+      dispatch({ type: 'LOAD_STATE', state: scenario.portfolio })
+      setLoadOpen(false)
+    },
+    [dispatch],
+  )
 
   // Build lookup maps from portfolio state — stable across consumer selector changes
   const { technologyMap, generatorNameMap, consumerNameMap } = useMemo(() => {
@@ -317,6 +386,52 @@ export function ResultsTab() {
         />
       </div>
 
+      {/* Action bar: save, download, load */}
+      <div className="results-tab__actions" data-testid="results-actions">
+        <button className="btn-primary" data-testid="save-scenario-btn" onClick={handleSave}>
+          Save scenario
+        </button>
+        <button className="btn-secondary" data-testid="download-scenario-btn" onClick={handleDownloadJson}>
+          Download scenario
+        </button>
+        <button className="btn-secondary" data-testid="download-report-btn" onClick={handleDownloadReport}>
+          Download report
+        </button>
+        <div className="results-tab__load-wrapper">
+          <button className="btn-secondary" data-testid="load-scenario-btn" onClick={handleLoadOpen}>
+            Load scenario
+          </button>
+          {loadOpen && savedScenarios.length > 0 && (
+            <ul className="results-tab__load-dropdown" data-testid="load-scenario-list">
+              {savedScenarios.map((s) => (
+                <li key={s.id}>
+                  <button
+                    className="results-tab__load-item"
+                    data-testid={`load-scenario-${s.id}`}
+                    onClick={() => handleLoadScenario(s)}
+                  >
+                    {s.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {loadOpen && savedScenarios.length === 0 && (
+            <div
+              className="results-tab__load-dropdown results-tab__load-empty"
+              data-testid="load-scenario-empty"
+            >
+              No saved scenarios
+            </div>
+          )}
+        </div>
+        {saveMsg && (
+          <span className="results-tab__save-msg" data-testid="save-confirmation">
+            {saveMsg}
+          </span>
+        )}
+      </div>
+
       {/* Score tiles */}
       <div className="results-tab__tiles" data-testid="results-tiles">
         <ScoreTile
@@ -408,10 +523,11 @@ export function ResultsTab() {
         >
           <h3 className="results-tab__chart-title">Energy flow</h3>
           <p className="results-tab__sankey-note" data-testid="sankey-outcomes-note">
-            <strong>Matched</strong> is allocated generation consumed in the same hour. <strong>Excess</strong> is
-            allocated to a consumer but arrives in an hour where its demand is already covered, so it counts
-            towards the annual score but not the hourly score. <strong>Surplus generation</strong> never reaches a
-            consumer: the matching cap or the allocation matrix left it unassigned.
+            <strong>Matched</strong> is allocated generation consumed in the same hour.{' '}
+            <strong>Excess</strong> is allocated to a consumer but arrives in an hour where its demand is
+            already covered, so it counts towards the annual score but not the hourly score.{' '}
+            <strong>Surplus generation</strong> never reaches a consumer: the matching cap or the allocation
+            matrix left it unassigned.
           </p>
           {consumerResult && (
             <p className="results-tab__sankey-note" data-testid="sankey-surplus-note">
