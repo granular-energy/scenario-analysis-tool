@@ -5,10 +5,10 @@
 
 import type Highcharts from 'highcharts'
 import { mergeDefaults } from '../results/charts/chartDefaults'
-import { CHART_FONT_FAMILY } from '../results/charts/palette'
+import { CHART_FONT_FAMILY, DEMAND_COLOUR } from '../results/charts/palette'
 
 /** Series colours for up to 4 scenarios, matching --ge-series-1..4 in tokens.css. */
-const SERIES_COLOURS = ['#00988b', '#e9a23b', '#0f4974', '#ab80cc'] as const
+export const SERIES_COLOURS = ['#00988b', '#e9a23b', '#0f4974', '#ab80cc'] as const
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -43,7 +43,7 @@ export function buildCompareChartConfig(input: CompareChartInput): Highcharts.Op
       categories: [...MONTH_LABELS],
       crosshair: {
         width: 1,
-        color: '#0F4974',
+        color: DEMAND_COLOUR,
       },
     },
     yAxis: {

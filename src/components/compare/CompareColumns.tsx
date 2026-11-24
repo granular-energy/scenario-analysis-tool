@@ -6,8 +6,8 @@
 
 import type { SavedScenario } from '../../io/scenarioIO'
 
-/** Series colours for up to 4 scenarios, matching --ge-series-1..4 in tokens.css. */
-const SERIES_COLOURS = ['#00988b', '#e9a23b', '#0f4974', '#ab80cc'] as const
+/** Series colours for up to 4 scenarios, imported from the shared palette. */
+import { SERIES_COLOURS } from './compareChartConfig'
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-GB', { maximumFractionDigits: 0 })
