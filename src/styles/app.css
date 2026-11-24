@@ -52,6 +52,7 @@
 .tab-bar__tab {
   flex-shrink: 0;
   padding: var(--ge-space-xs) var(--ge-space-sm);
+  min-height: 44px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -299,6 +300,7 @@
   border: none;
   border-radius: var(--ge-radius-sm);
   padding: 8px 16px;
+  min-height: 44px;
   font-family: var(--ge-font-body);
   font-size: 14px;
   font-weight: 600;
@@ -321,6 +323,7 @@
   border: 1px solid var(--ge-border);
   border-radius: var(--ge-radius-sm);
   padding: 6px 12px;
+  min-height: 44px;
   font-family: var(--ge-font-body);
   font-size: 13px;
   font-weight: 500;
