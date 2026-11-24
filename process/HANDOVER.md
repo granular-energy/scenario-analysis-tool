@@ -19,3 +19,11 @@
 - The harness has not been run. First run: `cd ~/Documents/GitHub/scenario-analysis-tool-v3 && ./process/scripts/harness.sh M2` (expect ~1–3 h, budget cap $30 per role call; adjust with `--budget`). Watch the first round.
 - Open decisions from the plan: repo name, HubSpot form IDs, Highcharts licence key, GitHub/Vercel access, who signs off engine parity.
 - Default sizes and capacity factors in `src/data/profiles/registry.json` are UK-typical guesses.
+
+## Launch state (2026-11-24)
+
+- Milestones M2–M6 complete. M6 added the HubSpot sign-up gate (full-app gate on first visit).
+- **Hosting**: Vercel project `scenario-analysis-tool` under Toby's personal Vercel account (toblerone74), production URL https://scenario-analysis-tool.vercel.app. Deployed with `vercel --prod` from the working tree; the project is not yet linked to GitHub, so redeploys are manual until it is. Transfer to a Granular Vercel team and add the `scenarios.granular-energy.com` CNAME when marketing/IT are ready.
+- **GitHub**: `granular-energy/scenario-analysis-tool` holds the old v1/v2 tool on `main`/`v2`. v3 is pushed to branch `v3`; switching `main` to v3 is a deliberate step for Toby.
+- **HubSpot**: EU portal 25772642, form "Scenario Analysis Tool sign-up" (`8aa9943b-d138-4200-bc7e-d61b3465a59b`). Forms from the current HubSpot editor only render through the per-portal embed script (`forms/embed/<portal>.js` + `.hs-form-frame`), not `v2.js`; submission arrives as a `hsFormCallback` postMessage. Open items from HubSpot's review: no reCAPTCHA, no GDPR consent field.
+- Playwright builds with `VITE_HUBSPOT_FORM_ID=REPLACE_WITH_FORM_ID` so the dev-mode gate tests still run; production uses the real ID by default.
