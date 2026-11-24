@@ -182,6 +182,7 @@ export function CompareTab() {
             ref={fileInputRef}
             type="file"
             accept=".json"
+            aria-label="Import scenario JSON file"
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
@@ -258,6 +259,7 @@ export function CompareTab() {
             ref={fileInputRef}
             type="file"
             accept=".json"
+            aria-label="Import scenario JSON file"
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />

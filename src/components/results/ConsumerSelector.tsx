@@ -16,6 +16,7 @@ export function ConsumerSelector({ consumers, selectedId, onChange }: ConsumerSe
     <select
       className="consumer-selector"
       data-testid="consumer-selector"
+      aria-label="View results for"
       value={selectedId ?? '__portfolio__'}
       onChange={(e) => onChange(e.target.value === '__portfolio__' ? null : e.target.value)}
     >

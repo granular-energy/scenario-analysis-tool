@@ -75,6 +75,12 @@
   border-bottom-color: var(--ge-teal);
 }
 
+.tab-bar__tab:focus-visible {
+  outline: 2px solid var(--ge-teal);
+  outline-offset: -2px;
+  border-radius: var(--ge-radius-sm);
+}
+
 /* ---- Score strip ---- */
 .score-strip {
   display: flex;
@@ -984,6 +990,36 @@
   margin-left: 4px;
 }
 
+/* ---- Results help / explanatory copy ---- */
+.results-tab__help {
+  cursor: default;
+}
+
+.results-tab__help-summary {
+  font-family: var(--ge-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ge-text-heading);
+  cursor: pointer;
+  list-style: revert;
+}
+
+.results-tab__help-body {
+  margin-top: var(--ge-space-xs);
+  font-size: 13px;
+  color: var(--ge-text);
+  line-height: 1.6;
+}
+
+.results-tab__help-body p {
+  margin: 0 0 var(--ge-space-xs);
+  font-size: 13px;
+}
+
+.results-tab__help-body strong {
+  color: var(--ge-text-heading);
+}
+
 /* ---- Chart cards ---- */
 .results-tab__chart-card {
   /* content-card class provides bg, border, radius, padding */
@@ -1061,6 +1097,13 @@
   font-size: 14px;
   color: var(--ge-text-muted);
   margin: 0;
+}
+
+/* ---- Responsive: tablet (768px) ---- */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .results-tab__tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ---- Responsive: mobile ---- */

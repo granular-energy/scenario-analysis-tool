@@ -118,6 +118,7 @@ export function CsvUploadModal({ profileType, onConfirm, onClose }: CsvUploadMod
             ref={fileRef}
             type="file"
             accept=".csv"
+            aria-label={`Choose ${profileType} CSV file`}
             data-testid="csv-file-input"
             onChange={(e) => {
               const file = e.target.files?.[0]

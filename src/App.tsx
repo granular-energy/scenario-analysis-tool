@@ -32,7 +32,12 @@ export default function App() {
         <Header />
         <TabBar active={activeTab} onChange={setActiveTab} />
         <ScoreStrip showScores={activeTab === 'allocation'} />
-        <main className="app-main">
+        <main
+          className="app-main"
+          id={`tabpanel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${activeTab}`}
+        >
           <TabContent tab={activeTab} />
         </main>
         <CtaBand />
