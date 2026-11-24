@@ -40,15 +40,16 @@ export function PortfolioTab() {
   }))
 
   const handleAddConsumer = useCallback(
-    (profileId: string) => {
+    async (profileId: string) => {
       const entry = getConsumptionEntry(profileId)
       if (!entry) return
+      const shape = await loadShape(entry.file)
       const consumer: PortfolioConsumer = {
         uid: uid(),
         profileId: entry.id,
         name: displayName(entry.id),
         annualMWh: entry.defaultAnnualMWh,
-        shape: loadShape(entry.file),
+        shape,
         source: 'library',
       }
       dispatch({ type: 'ADD_CONSUMER', consumer })
@@ -57,9 +58,10 @@ export function PortfolioTab() {
   )
 
   const handleAddGenerator = useCallback(
-    (profileId: string) => {
+    async (profileId: string) => {
       const entry = getGenerationEntry(profileId)
       if (!entry) return
+      const shape = await loadShape(entry.file)
       const generator: PortfolioGenerator = {
         uid: uid(),
         profileId: entry.id,
@@ -67,7 +69,7 @@ export function PortfolioTab() {
         annualMWh: Math.round(entry.defaultCapacityMW * entry.capacityFactor * 8760),
         capacityFactor: entry.capacityFactor,
         technology: entry.technology,
-        shape: loadShape(entry.file),
+        shape,
         source: 'library',
       }
       dispatch({ type: 'ADD_GENERATOR', generator })

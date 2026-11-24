@@ -7,7 +7,7 @@
 import { displayName, getConsumptionEntry, getGenerationEntry, loadShape } from './profileLoader'
 import type { PortfolioState } from './portfolioTypes'
 
-export function createDemoPortfolio(): PortfolioState {
+export async function createDemoPortfolio(): Promise<PortfolioState> {
   const dcEntry = getConsumptionEntry('data-centre')!
   const solarEntry = getGenerationEntry('solar-pv-temperate')!
   const windEntry = getGenerationEntry('wind-onshore-temperate')!
@@ -16,6 +16,12 @@ export function createDemoPortfolio(): PortfolioState {
   const solarUid = 'demo-solar'
   const windUid = 'demo-wind'
 
+  const [dcShape, solarShape, windShape] = await Promise.all([
+    loadShape(dcEntry.file),
+    loadShape(solarEntry.file),
+    loadShape(windEntry.file),
+  ])
+
   return {
     consumers: [
       {
@@ -23,7 +29,7 @@ export function createDemoPortfolio(): PortfolioState {
         profileId: dcEntry.id,
         name: displayName(dcEntry.id),
         annualMWh: 50_000, // matches golden fixture
-        shape: loadShape(dcEntry.file),
+        shape: dcShape,
         source: 'library',
       },
     ],
@@ -32,20 +38,20 @@ export function createDemoPortfolio(): PortfolioState {
         uid: solarUid,
         profileId: solarEntry.id,
         name: displayName(solarEntry.id),
-        annualMWh: 24_090, // = 25 MW × 0.11 CF × 8760, matches golden fixture
+        annualMWh: 24_090, // = 25 MW x 0.11 CF x 8760, matches golden fixture
         capacityFactor: solarEntry.capacityFactor,
         technology: solarEntry.technology,
-        shape: loadShape(solarEntry.file),
+        shape: solarShape,
         source: 'library',
       },
       {
         uid: windUid,
         profileId: windEntry.id,
         name: displayName(windEntry.id),
-        annualMWh: 26_280, // = 10 MW × 0.30 CF × 8760, matches golden fixture
+        annualMWh: 26_280, // = 10 MW x 0.30 CF x 8760, matches golden fixture
         capacityFactor: windEntry.capacityFactor,
         technology: windEntry.technology,
-        shape: loadShape(windEntry.file),
+        shape: windShape,
         source: 'library',
       },
     ],

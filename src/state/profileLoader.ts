@@ -68,31 +68,29 @@ export function displayName(id: string): string {
 
 const shapeCache = new Map<string, number[]>()
 
-/** Eagerly import all profile JSON files so Vite bundles them. */
-const profileModules = import.meta.glob<{ data: number[] }>('../data/profiles/**/*.json', {
-  eager: true,
-})
+/** Lazy-import all profile JSON files so Vite code-splits them out of the main chunk. */
+const profileModules = import.meta.glob<{ data: number[] }>('../data/profiles/**/*.json')
 
 function resolveModulePath(file: string): string {
   return `../data/profiles/${file}`
 }
 
-/** Load a normalised shape (sum ≈ 1.0) synchronously from the bundled JSON. */
-export function loadShape(file: string): number[] {
+/** Load a normalised shape (sum ~= 1.0) asynchronously from a lazy-loaded JSON chunk. */
+export async function loadShape(file: string): Promise<number[]> {
   const cached = shapeCache.get(file)
   if (cached) return cached
 
   const modulePath = resolveModulePath(file)
-  const mod = Object.entries(profileModules).find(([key]) => key.endsWith(modulePath.replace('..', '')))
-  if (!mod) {
-    // Fallback: try matching just the filename part
-    const fallback = Object.entries(profileModules).find(([key]) => key.endsWith(file))
-    if (!fallback) throw new Error(`Profile not found: ${file}`)
-    const shape = (fallback[1] as { data: number[] }).data
-    shapeCache.set(file, shape)
-    return shape
-  }
-  const shape = (mod[1] as { data: number[] }).data
+  const entry = Object.entries(profileModules).find(([key]) => key.endsWith(modulePath.replace('..', '')))
+  const loader = entry
+    ? entry[1]
+    : // Fallback: try matching just the filename part
+      Object.entries(profileModules).find(([key]) => key.endsWith(file))?.[1]
+
+  if (!loader) throw new Error(`Profile not found: ${file}`)
+
+  const mod = await loader()
+  const shape = mod.data
   shapeCache.set(file, shape)
   return shape
 }

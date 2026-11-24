@@ -1,6 +1,6 @@
 /** Portfolio state hook with localStorage persistence and engine integration. */
 
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { runEngine } from '../engine'
 import type { AllocationMatrix, Consumer, EngineResult, Generator } from '../engine/types'
 import { createDemoPortfolio } from './demoPortfolio'
@@ -27,22 +27,50 @@ function toEngineMatrix(matrix: PortfolioState['matrix']): AllocationMatrix {
   return matrix
 }
 
-function getInitialState(): PortfolioState {
-  return loadPortfolio() ?? createDemoPortfolio()
+/** Empty state used while the demo portfolio loads asynchronously. */
+const EMPTY_STATE: PortfolioState = {
+  consumers: [],
+  generators: [],
+  matrix: {},
+  granularity: 'hourly',
+}
+
+/**
+ * Resolve initial state from localStorage.
+ * Returns the persisted state and a flag indicating whether the demo is needed.
+ */
+function getInitialState(): { state: PortfolioState; needsDemo: boolean } {
+  const persisted = loadPortfolio()
+  if (persisted) return { state: persisted, needsDemo: false }
+  return { state: EMPTY_STATE, needsDemo: true }
 }
 
 export function usePortfolio() {
-  const [state, dispatch] = useReducer(portfolioReducer, undefined, getInitialState)
+  // useState lazy initialiser runs once and captures whether we need the demo
+  const [needsDemo] = useState(() => getInitialState().needsDemo)
+  const [loading, setLoading] = useState(needsDemo)
+  const [state, dispatch] = useReducer(portfolioReducer, undefined, () => getInitialState().state)
 
-  // Persist on every change
+  // Load the async demo portfolio when no localStorage data existed on mount
+  useEffect(() => {
+    if (!needsDemo) return
+    void createDemoPortfolio().then((demo) => {
+      dispatch({ type: 'LOAD_STATE', state: demo })
+      setLoading(false)
+    })
+  }, [needsDemo])
+
+  // Persist on every change (skip the initial empty state while loading)
   const isFirstRender = useRef(true)
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
       return
     }
-    savePortfolio(state)
-  }, [state])
+    if (!loading) {
+      savePortfolio(state)
+    }
+  }, [state, loading])
 
   // Run the engine whenever inputs change
   const engineResult: EngineResult | null = useMemo(() => {
@@ -65,5 +93,5 @@ export function usePortfolio() {
     })
   }, [state.consumers, state.generators, state.matrix, state.granularity])
 
-  return { state, dispatch, engineResult }
+  return { state, dispatch, engineResult, loading }
 }

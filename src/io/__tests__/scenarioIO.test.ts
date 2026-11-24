@@ -264,8 +264,8 @@ describe('validateScenarioFile', () => {
 })
 
 describe('round-trip: export -> validate -> import', () => {
-  it('preserves the demo portfolio through export and re-import', () => {
-    const original = createDemoPortfolio()
+  it('preserves the demo portfolio through export and re-import', async () => {
+    const original = await createDemoPortfolio()
     const exported = exportScenarioFile('Demo round-trip', original)
 
     const validated = validateScenarioFile(exported)
