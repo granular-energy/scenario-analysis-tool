@@ -172,6 +172,55 @@ describe('runEngine', () => {
     expect(result.generators[0].unallocatedMWh).toBeCloseTo(20 * HOURS_PER_YEAR, 3)
   })
 
+  it('consumption-share: 15 % of 50,000 MWh flat consumer with solar produces 7,500 MWh in solar shape', () => {
+    // Solar shape: daytime only (8h per day at a constant value)
+    const solarShape = daytime(1) // normalised shape; engine will re-normalise anyway
+    const shapeTotal = solarShape.reduce((a, b) => a + b, 0) // 8 * 365 = 2920
+    const flatDemand = flat(50_000 / HOURS_PER_YEAR) // ~5.707 MWh/h
+
+    const result = runEngine({
+      consumers: [{ id: 'c', demandMWh: flatDemand }],
+      generators: [{ id: 'solar', generationMWh: solarShape }],
+      matrix: {},
+      granularity: 'hourly',
+      allocationMode: 'consumption-share',
+      consumptionMatrix: { solar: { c: 15 } },
+    })
+
+    // Total supply should be 15% of 50,000 = 7,500 MWh
+    const totalSupply = result.consumers[0].totalSuppliedMWh
+    expect(totalSupply).toBeCloseTo(7500, 0)
+
+    // The hourly shape should be proportional to the solar profile
+    const gen = result.consumers[0].generators[0]
+    // During daytime hours, allocated should be (1 / shapeTotal) * 7500 = 7500 / 2920 ≈ 2.568 MWh
+    expect(gen.allocatedMWh[8]).toBeCloseTo(7500 / shapeTotal, 3)
+    // Night hours should be zero
+    expect(gen.allocatedMWh[0]).toBe(0)
+  })
+
+  it('consumption-share: generator utilisation reports zero unallocatedMWh', () => {
+    const flatDemand = flat(50_000 / HOURS_PER_YEAR)
+    const solarShape = daytime(1)
+
+    const result = runEngine({
+      consumers: [{ id: 'c', demandMWh: flatDemand }],
+      generators: [{ id: 'solar', generationMWh: solarShape }],
+      matrix: {},
+      granularity: 'hourly',
+      allocationMode: 'consumption-share',
+      consumptionMatrix: { solar: { c: 15 } },
+    })
+
+    // Every generator should have unallocatedMWh = 0
+    for (const g of result.generators) {
+      expect(g.unallocatedMWh).toBe(0)
+    }
+    // totalGenerationMWh should equal allocatedMWh
+    const gen = result.generators[0]
+    expect(gen.totalGenerationMWh).toBeCloseTo(gen.allocatedMWh, 1)
+  })
+
   it('runs a 5×5 hourly portfolio quickly', () => {
     const five = (prefix: string, v: number) =>
       Array.from({ length: 5 }, (_, i) => ({

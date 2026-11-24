@@ -267,6 +267,38 @@ describe('validateScenarioFile', () => {
   })
 })
 
+describe('M7: backward-compatible import of pre-M7 files', () => {
+  it('accepts a valid version-1 file without allocationMode or consumptionMatrix', () => {
+    const file = makeValidFile()
+    // Simulate a pre-M7 file: no allocationMode or consumptionMatrix
+    const { allocationMode: _a, consumptionMatrix: _c, ...preM7File } = file as Record<string, unknown>
+    const result = validateScenarioFile(preM7File)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const state = scenarioFileToPortfolioState(result.file)
+    expect(state.allocationMode).toBe('generator-share')
+    // consumptionMatrix should exist with zero entries for all generator-consumer pairs
+    expect(state.consumptionMatrix).toBeDefined()
+    expect(state.consumptionMatrix['g1']['c1']).toBe(0)
+  })
+
+  it('preserves allocationMode and consumptionMatrix when present', () => {
+    const file = {
+      ...makeValidFile(),
+      allocationMode: 'consumption-share' as const,
+      consumptionMatrix: { g1: { c1: 25 } },
+    }
+    const result = validateScenarioFile(file)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const state = scenarioFileToPortfolioState(result.file)
+    expect(state.allocationMode).toBe('consumption-share')
+    expect(state.consumptionMatrix['g1']['c1']).toBe(25)
+  })
+})
+
 describe('round-trip: export -> validate -> import', () => {
   it('preserves the demo portfolio through export and re-import', async () => {
     const original = await createDemoPortfolio()
