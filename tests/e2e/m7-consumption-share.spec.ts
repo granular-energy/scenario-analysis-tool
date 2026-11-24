@@ -13,8 +13,11 @@ test.describe('M7: Set % of consumption allocation mode', () => {
   test('M7.1 PortfolioState persists allocationMode and consumptionMatrix in localStorage', async ({
     page,
   }) => {
-    // Reload and check localStorage
-    await page.reload()
+    // Interact with the app so portfolio state is saved
+    await page.click('[data-tab="allocation"]')
+    await expect(page.locator('[data-testid="allocation-matrix"]')).toBeVisible()
+
+    // Now check localStorage
     const stored = await page.evaluate(() => {
       const raw = localStorage.getItem('sat-v3-portfolio')
       return raw ? JSON.parse(raw) : null
@@ -207,9 +210,15 @@ test.describe('M7: Set % of consumption allocation mode', () => {
     const sankeyContainer = page.locator('[data-testid="chart-sankey"]')
     await expect(sankeyContainer).toBeVisible()
 
-    // Check that no Sankey node text contains "Surplus"
-    const sankeyText = await sankeyContainer.textContent()
-    expect(sankeyText).not.toMatch(/Surplus/)
+    // Check that no visible Sankey data-label contains "Surplus"
+    // Use the Highcharts data-label spans rather than raw textContent
+    // (which includes injected <style> blocks from Highcharts)
+    const dataLabels = sankeyContainer.locator('.highcharts-data-label text, .highcharts-label text')
+    const count = await dataLabels.count()
+    for (let i = 0; i < count; i++) {
+      const text = await dataLabels.nth(i).textContent()
+      expect(text).not.toMatch(/Surplus/)
+    }
   })
 
   test('M7.17 Scenario JSON export includes allocationMode and consumptionMatrix', async ({ page }) => {
@@ -276,7 +285,7 @@ test.describe('M7: Set % of consumption allocation mode', () => {
 
     // Go to compare tab and select both
     await page.click('[data-tab="compare"]')
-    const checkboxes = page.locator('[data-testid="scenario-checkbox"]')
+    const checkboxes = page.locator('.compare-picker__checkbox')
     await checkboxes.nth(0).check()
     await checkboxes.nth(1).check()
 
