@@ -1,0 +1,20 @@
+# Milestone M7 brief: "Set % of consumption" allocation mode
+
+Goal: a second, clearly distinct way to fill the allocation matrix on the Allocation tab, chosen with a toggle.
+
+Modes:
+1. **Share of generator output** (existing, default): each cell is the % of that generator's output assigned to that consumer. Generator size matters.
+2. **Set % of consumption** (new): each cell is the % of that consumer's total annual consumption that comes from that generator's *shape*. The generator's own size is ignored: the supply series for the pair is the generator's normalised hourly shape scaled to `pct / 100 × consumer annual MWh`. Example: 15 % "Solar PV temperate" for a 50,000 MWh consumer supplies 7,500 MWh in the solar shape, whatever the generator's library sizing.
+
+In scope:
+- State: `allocationMode: 'generator-share' | 'consumption-share'` and a second matrix `consumptionMatrix` (generatorUid → consumerUid → % of consumer demand), both persisted. Switching modes keeps both matrices' entries so toggling back loses nothing. Demo portfolio starts in generator-share mode with an empty consumption matrix. "Allocate evenly" in consumption mode gives each consumer 100 % split equally across generators.
+- Engine: `EngineInput` gains `allocationMode` (default generator-share) and, for consumption-share, consumers' annual demand is already in `demandMWh`, so compute each pair's supply from the generator shape (generationMWh normalised to sum 1) × target MWh. Generator utilisation in this mode: `allocatedMWh` = Σ assigned volume, `unallocatedMWh` = 0 and `generationMWh` treated as the assigned total (there is no surplus concept because size is ignored). Everything downstream (matching caps, excess, surplus from caps, scores) works unchanged. Add unit tests, including the 15 % example above, and keep the golden tests untouched.
+- Allocation tab UI: a segmented toggle above the matrix (`data-testid="allocation-mode-toggle"`, options "Share of generator output" / "Set % of consumption") with a one-sentence explanation of each under it, in the style of the Allocation method selector. The active mode is obvious at a glance (label on the matrix heading, e.g. "Allocation matrix · % of consumer's annual consumption"). In consumption mode the grid cells edit the consumption matrix; the existing % / MWh display switch shows assigned MWh (`pct × consumer annual MWh`); and each consumer gets a visible total "% of annual consumption allocated" (`data-testid="consumer-allocated-pct"`) that turns amber above 100 % with a tooltip explaining over-allocation is allowed and shows as excess. Per-generator totals in this mode show assigned MWh, not %, since size is ignored.
+- Score strip: in consumption mode the "Annual generation" item shows the assigned total and is captioned "assigned", since library sizing is not used.
+- Results tab: header line states the mode when it is consumption-share ("Set % of consumption"); the Sankey note and the Results tiles need no other change. Generator surplus flows are absent in this mode.
+- Scenarios: scenario file/version includes `allocationMode` and `consumptionMatrix`; older files without them load as generator-share with an empty consumption matrix. Compare assumptions table gets an "Allocation mode" row and shows the matrix relevant to each scenario's mode (differences highlighted as now). Both PDFs print the mode and the relevant matrix with the correct unit label.
+- Tests: reducer and scenario IO unit tests; e2e for toggling, entering 15 % and seeing the consumer total and MWh, over-allocation styling, persistence across reload, save/load/compare round trip; all existing suites keep passing.
+
+Out of scope: changing the matching methods, new library profiles, any change to generator-share behaviour.
+
+Context: the Allocation method selector is called "Allocation method" (as produced → annual → monthly → hourly); annual score is volumetric and may exceed 100 %; the sign-up gate is bypassed in every spec by setting `localStorage['scenario-tool.signedUp']` after `localStorage.clear()`; Playwright always builds before serving and no separate preview may be started on port 4173.
