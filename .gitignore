@@ -8,3 +8,6 @@ STATUS
 test-results/
 playwright-report/
 .DS_Store
+
+# Vercel project link
+.vercel
