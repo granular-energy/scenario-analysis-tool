@@ -28,6 +28,7 @@ All 25 M5 criteria addressed. Summary of changes per criterion:
 
 ### M5.7 — 375px mobile
 - Existing mobile styles handle layout. Added `min-height: 44px` to `.btn-primary`, `.btn-secondary`, `.tab-bar__tab` for touch targets. Matrix `overflow-x: auto`.
+- Fixed `.member-card__remove` buttons: added `min-height: 44px; min-width: 44px` (was 25px, below 44px requirement). All buttons now meet the 44px touch target on mobile.
 
 ### M5.8 — 768px tablet
 - Added 2×2 grid for `.results-tab__tiles` at 640–1023px. Portfolio panels already side-by-side at 768px+.
