@@ -306,15 +306,17 @@ export async function generateSingleScenarioPdf(
   // KPI section
   let y = 75
 
-  // Allocation method
+  // Allocation mode + method
+  const isConsumptionShare = state.allocationMode === 'consumption-share'
+  const modeLabel = isConsumptionShare ? 'Set % of consumption' : 'Share of generator output'
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   setTextColour(doc, NEUTRAL_600)
-  doc.text('Allocation method', margin, y)
+  doc.text('Allocation mode', margin, y)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
   setTextColour(doc, NEUTRAL_1000)
-  doc.text(granularityLabel(state.granularity), margin, y + 6)
+  doc.text(`${modeLabel} \u00B7 ${granularityLabel(state.granularity)}`, margin, y + 6)
   y += 20
 
   drawHr(doc, y, margin, margin + contentW)
@@ -424,7 +426,11 @@ export async function generateSingleScenarioPdf(
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
   setTextColour(doc, NEUTRAL_1000)
-  doc.text('Allocation matrix (%)', margin, y)
+  doc.text(
+    isConsumptionShare ? 'Allocation matrix (% of consumption)' : 'Allocation matrix (% of generator output)',
+    margin,
+    y,
+  )
   y += 8
 
   y = drawAllocationMatrix(doc, state, margin, y, contentW)
@@ -626,7 +632,8 @@ function drawAllocationMatrix(
   startY: number,
   contentW: number,
 ): number {
-  const { consumers, generators, matrix } = state
+  const { consumers, generators, matrix, allocationMode, consumptionMatrix } = state
+  const activeMatrix = allocationMode === 'consumption-share' ? consumptionMatrix : matrix
   if (consumers.length === 0 || generators.length === 0) return startY
 
   // Column layout: first column for generator name, then one per consumer
@@ -671,7 +678,7 @@ function drawAllocationMatrix(
     doc.text(genName, x + 2, y)
 
     for (let ci = 0; ci < consumers.length; ci++) {
-      const pct = matrix[gen.uid]?.[consumers[ci].uid] ?? 0
+      const pct = activeMatrix[gen.uid]?.[consumers[ci].uid] ?? 0
       const cx = x + (ci + 1) * colW
       setTextColour(doc, pct > 0 ? NEUTRAL_1000 : NEUTRAL_600)
       doc.text(`${pct.toFixed(0)}%`, cx + 2, y)
@@ -709,6 +716,20 @@ function drawComparisonAssumptionsTable(
   }
   y += rowH
   drawHr(doc, y - 2, x, x + contentW)
+
+  // Row: Allocation mode
+  y = drawAssumptionRow(
+    doc,
+    'Allocation mode',
+    scenarios.map((s) =>
+      s.portfolio.allocationMode === 'consumption-share'
+        ? 'Set % of consumption'
+        : 'Share of generator output',
+    ),
+    x,
+    y,
+    colW,
+  )
 
   // Row: Allocation method
   y = drawAssumptionRow(

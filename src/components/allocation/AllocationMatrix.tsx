@@ -11,26 +11,36 @@ function formatNumber(n: number): string {
 
 export function AllocationMatrix() {
   const { state, dispatch } = usePortfolioContext()
-  const { consumers, generators, matrix } = state
+  const { consumers, generators, matrix, allocationMode, consumptionMatrix } = state
   const [inputMode, setInputMode] = useState<InputMode>('percent')
+  const isConsumptionShare = allocationMode === 'consumption-share'
+  const activeMatrix = isConsumptionShare ? consumptionMatrix : matrix
 
   const handlePercentChange = useCallback(
     (generatorUid: string, consumerUid: string, value: string) => {
       const parsed = Number(value)
       if (!Number.isFinite(parsed)) return
-      dispatch({ type: 'SET_ALLOCATION', generatorUid, consumerUid, percent: parsed })
+      if (isConsumptionShare) {
+        dispatch({ type: 'SET_CONSUMPTION_ALLOCATION', generatorUid, consumerUid, percent: parsed })
+      } else {
+        dispatch({ type: 'SET_ALLOCATION', generatorUid, consumerUid, percent: parsed })
+      }
     },
-    [dispatch],
+    [dispatch, isConsumptionShare],
   )
 
   const handleMWhChange = useCallback(
-    (generatorUid: string, consumerUid: string, mwhValue: string, generatorAnnualMWh: number) => {
+    (generatorUid: string, consumerUid: string, mwhValue: string, denominator: number) => {
       const parsed = Number(mwhValue.replace(/[, ]/g, ''))
-      if (!Number.isFinite(parsed) || generatorAnnualMWh <= 0) return
-      const percent = (parsed / generatorAnnualMWh) * 100
-      dispatch({ type: 'SET_ALLOCATION', generatorUid, consumerUid, percent })
+      if (!Number.isFinite(parsed) || denominator <= 0) return
+      const percent = (parsed / denominator) * 100
+      if (isConsumptionShare) {
+        dispatch({ type: 'SET_CONSUMPTION_ALLOCATION', generatorUid, consumerUid, percent })
+      } else {
+        dispatch({ type: 'SET_ALLOCATION', generatorUid, consumerUid, percent })
+      }
     },
-    [dispatch],
+    [dispatch, isConsumptionShare],
   )
 
   if (consumers.length === 0 || generators.length === 0) {
@@ -77,7 +87,68 @@ export function AllocationMatrix() {
           </thead>
           <tbody>
             {generators.map((g) => {
-              const row = matrix[g.uid] ?? {}
+              const row = activeMatrix[g.uid] ?? {}
+
+              if (isConsumptionShare) {
+                // Row total = sum of pct × consumer annual MWh across consumers (assigned MWh)
+                const rowTotalMWh = consumers.reduce((sum, c) => {
+                  const pct = row[c.uid] ?? 0
+                  return sum + (pct / 100) * c.annualMWh
+                }, 0)
+
+                return (
+                  <tr key={g.uid} data-testid="matrix-row">
+                    <td className="matrix-table__row-header">
+                      <div className="matrix-table__header-name">{g.name}</div>
+                      <div className="matrix-table__header-mwh">{formatNumber(g.annualMWh)} MWh</div>
+                    </td>
+                    {consumers.map((c) => {
+                      const pct = row[c.uid] ?? 0
+                      const mwh = (pct / 100) * c.annualMWh
+
+                      return (
+                        <td key={c.uid} className="matrix-table__cell">
+                          {inputMode === 'percent' ? (
+                            <div className="matrix-table__cell-content">
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                className="matrix-table__input"
+                                value={pct}
+                                onChange={(e) => handlePercentChange(g.uid, c.uid, e.target.value)}
+                                data-testid="matrix-cell"
+                                aria-label={`${g.name} to ${c.name} (%)`}
+                              />
+                              <span className="matrix-table__cell-computed">
+                                {formatNumber(Math.round(mwh))} MWh
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="matrix-table__cell-content">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                className="matrix-table__input"
+                                value={String(Math.round(mwh))}
+                                onChange={(e) => handleMWhChange(g.uid, c.uid, e.target.value, c.annualMWh)}
+                                data-testid="matrix-cell"
+                                aria-label={`${g.name} to ${c.name} (MWh)`}
+                              />
+                              <span className="matrix-table__cell-computed">{pct.toFixed(1)} %</span>
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                    <td className="matrix-table__total" data-testid="row-total">
+                      <div>{formatNumber(Math.round(rowTotalMWh))} MWh</div>
+                    </td>
+                  </tr>
+                )
+              }
+
+              // generator-share mode (existing behaviour)
               const rowTotalPct = consumers.reduce((sum, c) => sum + (row[c.uid] ?? 0), 0)
               const rowTotalMWh = (rowTotalPct / 100) * g.annualMWh
               const overAllocated = rowTotalPct > 100
@@ -150,6 +221,42 @@ export function AllocationMatrix() {
             <tr className="matrix-table__totals-row">
               <td className="matrix-table__row-header matrix-table__row-header--total">Total</td>
               {consumers.map((c) => {
+                if (isConsumptionShare) {
+                  // Sum of all generators' percentages for this consumer
+                  const colTotalPct = generators.reduce((sum, g) => {
+                    const pct = (activeMatrix[g.uid] ?? {})[c.uid] ?? 0
+                    return sum + pct
+                  }, 0)
+                  const colTotalMWh = (colTotalPct / 100) * c.annualMWh
+                  const overAllocated = colTotalPct > 100
+                  return (
+                    <td
+                      key={c.uid}
+                      className={`matrix-table__total ${overAllocated ? 'matrix-table__total--warning' : ''}`}
+                      data-testid="consumer-allocated-pct"
+                      title={
+                        overAllocated
+                          ? 'Over-allocation is allowed and results in excess energy above the consumer\u2019s demand.'
+                          : undefined
+                      }
+                    >
+                      <div>{formatNumber(Math.round(colTotalMWh))} MWh</div>
+                      <div>
+                        {colTotalPct.toFixed(1)} %
+                        {overAllocated && (
+                          <span
+                            className="matrix-table__warning-icon"
+                            title="Over-allocation is allowed and results in excess energy."
+                          >
+                            {' '}
+                            ⚠
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  )
+                }
+                // generator-share column totals
                 const colTotalMWh = generators.reduce((sum, g) => {
                   const pct = (matrix[g.uid] ?? {})[c.uid] ?? 0
                   return sum + (pct / 100) * g.annualMWh

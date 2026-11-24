@@ -15,7 +15,11 @@ export function ScoreStrip({ showScores }: { showScores: boolean }) {
   const hourly = engineResult.portfolio.hourlyScore
   const annual = engineResult.portfolio.annualScore
   const totalConsumption = state.consumers.reduce((sum, c) => sum + c.annualMWh, 0)
-  const totalGeneration = state.generators.reduce((sum, g) => sum + g.annualMWh, 0)
+  const isConsumptionShare = state.allocationMode === 'consumption-share'
+  const totalGeneration = isConsumptionShare
+    ? engineResult.generators.reduce((sum, g) => sum + g.totalGenerationMWh, 0)
+    : state.generators.reduce((sum, g) => sum + g.annualMWh, 0)
+  const generationLabel = isConsumptionShare ? 'Assigned' : 'Annual generation'
   const label = granularityLabel(state.granularity)
 
   return (
@@ -31,7 +35,7 @@ export function ScoreStrip({ showScores }: { showScores: boolean }) {
           </span>
         </div>
         <div className="score-strip__item">
-          <span className="score-strip__label">Annual generation</span>
+          <span className="score-strip__label">{generationLabel}</span>
           <span className="score-strip__value" data-testid="total-generation">
             {formatMWh(totalGeneration)} <span className="score-strip__unit">MWh</span>
           </span>

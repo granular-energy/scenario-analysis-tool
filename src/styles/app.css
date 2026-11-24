@@ -599,8 +599,8 @@
 }
 
 .matrix-table__total--warning {
-  color: var(--ge-error);
-  background: var(--ge-error-bg);
+  color: var(--ge-warning);
+  background: var(--ge-warning-bg);
 }
 
 .matrix-table__warning-icon {
@@ -673,6 +673,43 @@
   border-color: var(--ge-teal);
   background: var(--ge-teal-100);
   color: var(--ge-teal);
+}
+
+/* ---- Allocation mode toggle (M7) ---- */
+.allocation-mode-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: var(--ge-space-sm);
+  border: 1px solid var(--ge-border);
+  border-radius: var(--ge-radius-sm);
+  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.allocation-mode-toggle__option {
+  padding: 6px 16px;
+  border: none;
+  background: var(--ge-card-bg);
+  font-family: var(--ge-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ge-text);
+  cursor: pointer;
+  transition:
+    background var(--ge-duration-fast) var(--ge-ease),
+    color var(--ge-duration-fast) var(--ge-ease);
+  white-space: nowrap;
+}
+
+.allocation-mode-toggle__option + .allocation-mode-toggle__option {
+  border-left: 1px solid var(--ge-border);
+}
+
+.allocation-mode-toggle__option--active {
+  background: var(--ge-teal);
+  color: var(--ge-white);
 }
 
 /* ---- Granularity selector ---- */

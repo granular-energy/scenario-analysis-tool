@@ -361,8 +361,10 @@ export function ResultsTab() {
           {(() => {
             const info = granularityInfo(engineResult.granularity)
             const hasShapeTip = info.shapeRule === 'generator shape preserved'
+            const isConsumptionShare = state.allocationMode === 'consumption-share'
             return (
               <>
+                {isConsumptionShare && <>Set % of consumption &middot; </>}
                 {info.label} &middot; {info.capRule} &middot;{' '}
                 {hasShapeTip ? (
                   <abbr
