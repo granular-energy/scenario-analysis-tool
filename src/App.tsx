@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AllocationTab } from './components/allocation/AllocationTab'
+import { CompareTab } from './components/compare/CompareTab'
 import { CtaBand } from './components/layout/CtaBand'
 import { Header } from './components/layout/Header'
 import { ScoreStrip } from './components/layout/ScoreStrip'
@@ -18,11 +19,7 @@ function TabContent({ tab }: { tab: TabId }) {
     case 'results':
       return <ResultsTab />
     case 'compare':
-      return (
-        <div className="placeholder-tab" data-testid="compare-placeholder">
-          <p>Compare view coming soon.</p>
-        </div>
-      )
+      return <CompareTab />
   }
 }
 
