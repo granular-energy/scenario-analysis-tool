@@ -33,6 +33,8 @@ const EMPTY_STATE: PortfolioState = {
   generators: [],
   matrix: {},
   granularity: 'hourly',
+  allocationMode: 'generator-share',
+  consumptionMatrix: {},
 }
 
 /**
@@ -76,9 +78,12 @@ export function usePortfolio() {
   const engineResult: EngineResult | null = useMemo(() => {
     if (state.consumers.length === 0 || state.generators.length === 0) return null
 
-    // Check if any generator has a non-zero allocation
+    const isConsumptionShare = state.allocationMode === 'consumption-share'
+    const activeMatrix = isConsumptionShare ? state.consumptionMatrix : state.matrix
+
+    // Check if any generator has a non-zero allocation in the active matrix
     const hasAllocation = state.generators.some((g) => {
-      const row = state.matrix[g.uid]
+      const row = activeMatrix[g.uid]
       return row && Object.values(row).some((v) => v > 0)
     })
     if (!hasAllocation) return null
@@ -90,8 +95,17 @@ export function usePortfolio() {
       generators,
       matrix: toEngineMatrix(state.matrix),
       granularity: state.granularity,
+      allocationMode: state.allocationMode,
+      consumptionMatrix: toEngineMatrix(state.consumptionMatrix),
     })
-  }, [state.consumers, state.generators, state.matrix, state.granularity])
+  }, [
+    state.consumers,
+    state.generators,
+    state.matrix,
+    state.granularity,
+    state.allocationMode,
+    state.consumptionMatrix,
+  ])
 
   return { state, dispatch, engineResult, loading }
 }

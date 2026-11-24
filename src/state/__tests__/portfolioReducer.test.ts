@@ -27,7 +27,14 @@ function makeGenerator(uid: string, name = uid): PortfolioGenerator {
 }
 
 function emptyState(): PortfolioState {
-  return { consumers: [], generators: [], matrix: {}, granularity: 'hourly' }
+  return {
+    consumers: [],
+    generators: [],
+    matrix: {},
+    granularity: 'hourly',
+    allocationMode: 'generator-share',
+    consumptionMatrix: {},
+  }
 }
 
 describe('evenShares', () => {

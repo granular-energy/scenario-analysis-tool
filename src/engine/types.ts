@@ -5,6 +5,8 @@ export type HourlySeries = readonly number[]
 
 export type MatchingGranularity = 'hourly' | 'monthly' | 'annual' | 'as-produced'
 
+export type AllocationMode = 'generator-share' | 'consumption-share'
+
 export interface Consumer {
   readonly id: string
   readonly demandMWh: HourlySeries
@@ -23,6 +25,10 @@ export interface EngineInput {
   readonly generators: readonly Generator[]
   readonly matrix: AllocationMatrix
   readonly granularity: MatchingGranularity
+  /** Defaults to 'generator-share'. In 'consumption-share' mode, the consumptionMatrix is used instead. */
+  readonly allocationMode?: AllocationMode
+  /** generatorId → consumerId → percent of consumer's annual demand supplied in the generator's shape. */
+  readonly consumptionMatrix?: AllocationMatrix
 }
 
 export interface GeneratorContribution {

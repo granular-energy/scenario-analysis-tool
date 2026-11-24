@@ -126,6 +126,8 @@ describe('exportScenarioFile', () => {
       ],
       matrix: { g1: { c1: 50 } },
       granularity: 'monthly' as const,
+      allocationMode: 'generator-share' as const,
+      consumptionMatrix: { g1: { c1: 0 } },
     }
 
     const file = exportScenarioFile('My scenario', state)
@@ -145,6 +147,8 @@ describe('exportScenarioFile', () => {
       generators: [],
       matrix: {},
       granularity: 'hourly' as const,
+      allocationMode: 'generator-share' as const,
+      consumptionMatrix: {},
     }
     // We test with empty arrays here just to verify the timestamp format;
     // validation would reject this, but exportScenarioFile does not validate.

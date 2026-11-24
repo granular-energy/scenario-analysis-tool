@@ -27,20 +27,42 @@ export function migratePortfolioState(raw: Record<string, unknown>): PortfolioSt
   const state = raw as unknown as PortfolioState
   // Check whether any generator still has the old capacityMW field
   const generators = (raw['generators'] as Record<string, unknown>[]) ?? []
-  const needsMigration = generators.some((g) => 'capacityMW' in g && !('annualMWh' in g))
-  if (!needsMigration) return state
+  const needsCapMigration = generators.some((g) => 'capacityMW' in g && !('annualMWh' in g))
 
-  const migratedGenerators = generators.map((g) => {
-    const legacy = g as unknown as LegacyGenerator
-    if ('capacityMW' in g && !('annualMWh' in g)) {
-      const annualMWh = Math.round(legacy.capacityMW * legacy.capacityFactor * 8760)
-      const { capacityMW: _, ...rest } = g as Record<string, unknown>
-      return { ...rest, annualMWh }
+  let result = state
+
+  if (needsCapMigration) {
+    const migratedGenerators = generators.map((g) => {
+      const legacy = g as unknown as LegacyGenerator
+      if ('capacityMW' in g && !('annualMWh' in g)) {
+        const annualMWh = Math.round(legacy.capacityMW * legacy.capacityFactor * 8760)
+        const { capacityMW: _, ...rest } = g as Record<string, unknown>
+        return { ...rest, annualMWh }
+      }
+      return g
+    })
+    result = { ...result, generators: migratedGenerators } as unknown as PortfolioState
+  }
+
+  // M7: add allocationMode and consumptionMatrix if missing
+  if (!('allocationMode' in raw) || !('consumptionMatrix' in raw)) {
+    const emptyConsumptionMatrix: Record<string, Record<string, number>> = {}
+    const gens = (result.generators ?? []) as unknown as Array<{ uid: string }>
+    const cons = (result.consumers ?? []) as unknown as Array<{ uid: string }>
+    for (const g of gens) {
+      const row: Record<string, number> = {}
+      for (const c of cons) row[c.uid] = 0
+      emptyConsumptionMatrix[g.uid] = row
     }
-    return g
-  })
+    result = {
+      ...result,
+      allocationMode: (raw['allocationMode'] as 'generator-share' | 'consumption-share') ?? 'generator-share',
+      consumptionMatrix:
+        (raw['consumptionMatrix'] as Record<string, Record<string, number>>) ?? emptyConsumptionMatrix,
+    } as PortfolioState
+  }
 
-  return { ...state, generators: migratedGenerators } as unknown as PortfolioState
+  return result
 }
 
 export function loadPortfolio(): PortfolioState | null {

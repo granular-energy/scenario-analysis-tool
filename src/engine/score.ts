@@ -15,7 +15,11 @@ function pct(numerator: number, denominator: number): number {
   return denominator > 0 ? (numerator / denominator) * 100 : 0
 }
 
-function summarise(demandMWh: HourlySeries, allocatedMWh: HourlySeries, suppliedMWh: number): MatchingSummary {
+function summarise(
+  demandMWh: HourlySeries,
+  allocatedMWh: HourlySeries,
+  suppliedMWh: number,
+): MatchingSummary {
   const matched = new Array<number>(HOURS_PER_YEAR)
   const excess = new Array<number>(HOURS_PER_YEAR)
   const unmatched = new Array<number>(HOURS_PER_YEAR)
@@ -62,19 +66,48 @@ function addInto(target: number[], source: HourlySeries): void {
   for (let h = 0; h < HOURS_PER_YEAR; h++) target[h] += source[h]
 }
 
+/**
+ * Build the per-consumer supply series for consumption-share mode.
+ * Each pair's supply = generator normalised shape × (pct / 100 × consumer total demand MWh).
+ * The generator's own library size is ignored; only its shape matters.
+ */
+function buildConsumptionShareSupplies(
+  consumer: { id: string; demandMWh: HourlySeries },
+  generators: readonly { id: string; generationMWh: HourlySeries }[],
+  consumptionMatrix: { readonly [gId: string]: { readonly [cId: string]: number } },
+): SupplyForConsumer[] {
+  const consumerDemandTotal = sum(consumer.demandMWh)
+  return generators.flatMap((g) => {
+    const pct = consumptionMatrix[g.id]?.[consumer.id] ?? 0
+    if (pct <= 0) return []
+    const targetMWh = (pct / 100) * consumerDemandTotal
+    // Normalise the generator shape to sum to 1, then scale to targetMWh
+    const shapeTotal = sum(g.generationMWh)
+    if (shapeTotal <= 0) return []
+    const supplyMWh = g.generationMWh.map((v) => (v / shapeTotal) * targetMWh)
+    return [{ generatorId: g.id, supplyMWh }]
+  })
+}
+
 export function runEngine(input: EngineInput): EngineResult {
   const { consumers, generators, matrix, granularity } = input
+  const mode = input.allocationMode ?? 'generator-share'
+  const consumptionMatrix = input.consumptionMatrix ?? {}
+  const isConsumptionShare = mode === 'consumption-share'
+
   const allocatedByGenerator = new Map<string, Record<string, number>>(generators.map((g) => [g.id, {}]))
   const portfolioDemand = new Array<number>(HOURS_PER_YEAR).fill(0)
   const portfolioAllocated = new Array<number>(HOURS_PER_YEAR).fill(0)
   let portfolioSupplied = 0
 
   const consumerResults: ConsumerResult[] = consumers.map((consumer) => {
-    const supplies: SupplyForConsumer[] = generators.flatMap((g) => {
-      const share = (matrix[g.id]?.[consumer.id] ?? 0) / 100
-      if (share <= 0) return []
-      return [{ generatorId: g.id, supplyMWh: g.generationMWh.map((v) => v * share) }]
-    })
+    const supplies: SupplyForConsumer[] = isConsumptionShare
+      ? buildConsumptionShareSupplies(consumer, generators, consumptionMatrix)
+      : generators.flatMap((g) => {
+          const share = (matrix[g.id]?.[consumer.id] ?? 0) / 100
+          if (share <= 0) return []
+          return [{ generatorId: g.id, supplyMWh: g.generationMWh.map((v) => v * share) }]
+        })
     const allocations = allocateToConsumer(consumer.demandMWh, supplies, granularity)
 
     const allocated = new Array<number>(HOURS_PER_YEAR).fill(0)
@@ -108,6 +141,19 @@ export function runEngine(input: EngineInput): EngineResult {
   const utilisation: GeneratorUtilisation[] = generators.map((g) => {
     const byConsumer = allocatedByGenerator.get(g.id)!
     const allocatedTotal = Object.values(byConsumer).reduce((a, b) => a + b, 0)
+
+    if (isConsumptionShare) {
+      // In consumption-share mode the generator's library size is irrelevant.
+      // Report assigned total as generation, with zero surplus.
+      return {
+        generatorId: g.id,
+        totalGenerationMWh: allocatedTotal,
+        allocatedMWh: allocatedTotal,
+        unallocatedMWh: 0,
+        allocatedByConsumer: byConsumer,
+      }
+    }
+
     const generationTotal = sum(g.generationMWh)
     return {
       generatorId: g.id,

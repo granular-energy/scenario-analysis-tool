@@ -60,5 +60,10 @@ export async function createDemoPortfolio(): Promise<PortfolioState> {
       [windUid]: { [dcUid]: 100 },
     },
     granularity: 'hourly',
+    allocationMode: 'generator-share',
+    consumptionMatrix: {
+      [solarUid]: { [dcUid]: 0 },
+      [windUid]: { [dcUid]: 0 },
+    },
   }
 }

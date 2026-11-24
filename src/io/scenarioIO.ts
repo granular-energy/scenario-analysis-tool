@@ -1,6 +1,6 @@
 /** Scenario import/export — self-contained JSON files and localStorage persistence for saved scenarios. */
 
-import type { MatchingGranularity, EngineResult } from '../engine/types'
+import type { AllocationMode, MatchingGranularity, EngineResult } from '../engine/types'
 import { HOURS_PER_YEAR } from '../engine/types'
 import type {
   PortfolioConsumer,
@@ -37,6 +37,10 @@ export interface ScenarioFile {
   readonly generators: readonly PortfolioGenerator[]
   readonly matrix: PortfolioMatrix
   readonly granularity: MatchingGranularity
+  /** Added in M7. Absent in older files; defaults to 'generator-share'. */
+  readonly allocationMode?: AllocationMode
+  /** Added in M7. Absent in older files; defaults to all-zero matrix. */
+  readonly consumptionMatrix?: PortfolioMatrix
 }
 
 const VALID_GRANULARITIES: readonly string[] = ['hourly', 'monthly', 'annual', 'as-produced']
@@ -68,6 +72,8 @@ export function exportScenarioFile(name: string, state: PortfolioState): Scenari
     generators: state.generators,
     matrix: state.matrix,
     granularity: state.granularity,
+    allocationMode: state.allocationMode,
+    consumptionMatrix: state.consumptionMatrix,
   }
 }
 
@@ -175,10 +181,20 @@ export function validateScenarioFile(
 
 /** Converts a valid ScenarioFile back to a PortfolioState. */
 export function scenarioFileToPortfolioState(file: ScenarioFile): PortfolioState {
+  // Build an empty consumption matrix as default for files without one
+  const emptyConsumptionMatrix: PortfolioMatrix = {}
+  for (const g of file.generators) {
+    const row: Record<string, number> = {}
+    for (const c of file.consumers) row[c.uid] = 0
+    emptyConsumptionMatrix[g.uid] = row
+  }
+
   return {
     consumers: file.consumers,
     generators: file.generators,
     matrix: file.matrix,
     granularity: file.granularity,
+    allocationMode: file.allocationMode ?? 'generator-share',
+    consumptionMatrix: file.consumptionMatrix ?? emptyConsumptionMatrix,
   }
 }

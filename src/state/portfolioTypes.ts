@@ -1,6 +1,6 @@
 /** Types for the portfolio state — consumers, generators, allocation matrix, and granularity. */
 
-import type { MatchingGranularity } from '../engine/types'
+import type { AllocationMode, MatchingGranularity } from '../engine/types'
 
 export interface PortfolioConsumer {
   readonly uid: string
@@ -32,6 +32,9 @@ export interface PortfolioState {
   readonly generators: readonly PortfolioGenerator[]
   readonly matrix: PortfolioMatrix
   readonly granularity: MatchingGranularity
+  readonly allocationMode: AllocationMode
+  /** Consumption-share matrix: generatorUid → consumerUid → percent of consumer's annual demand. */
+  readonly consumptionMatrix: PortfolioMatrix
 }
 
 export type PortfolioAction =
@@ -42,8 +45,10 @@ export type PortfolioAction =
   | { type: 'REMOVE_GENERATOR'; uid: string }
   | { type: 'UPDATE_GENERATOR_SIZING'; uid: string; annualMWh: number }
   | { type: 'SET_ALLOCATION'; generatorUid: string; consumerUid: string; percent: number }
+  | { type: 'SET_CONSUMPTION_ALLOCATION'; generatorUid: string; consumerUid: string; percent: number }
   | { type: 'ALLOCATE_EVENLY' }
   | { type: 'SET_GRANULARITY'; granularity: MatchingGranularity }
+  | { type: 'SET_ALLOCATION_MODE'; mode: AllocationMode }
   | { type: 'LOAD_STATE'; state: PortfolioState }
 
 export const MAX_CONSUMERS = 5

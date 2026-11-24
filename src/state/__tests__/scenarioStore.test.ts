@@ -20,6 +20,8 @@ function makeSavedScenario(id: string, name: string): SavedScenario {
       generators: [],
       matrix: {},
       granularity: 'hourly',
+      allocationMode: 'generator-share',
+      consumptionMatrix: {},
     },
     results: {
       hourlyScore: 67.33,

@@ -45,6 +45,7 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
         ...state,
         consumers: [...state.consumers, action.consumer],
         matrix: addConsumerToMatrix(state.matrix, action.consumer.uid),
+        consumptionMatrix: addConsumerToMatrix(state.consumptionMatrix, action.consumer.uid),
       }
     }
     case 'REMOVE_CONSUMER': {
@@ -52,6 +53,7 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
         ...state,
         consumers: state.consumers.filter((c) => c.uid !== action.uid),
         matrix: removeConsumerFromMatrix(state.matrix, action.uid),
+        consumptionMatrix: removeConsumerFromMatrix(state.consumptionMatrix, action.uid),
       }
     }
     case 'UPDATE_CONSUMER_SIZING': {
@@ -69,6 +71,7 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
         ...state,
         generators: [...state.generators, action.generator],
         matrix: addGeneratorToMatrix(state.matrix, action.generator.uid, consumerUids),
+        consumptionMatrix: addGeneratorToMatrix(state.consumptionMatrix, action.generator.uid, consumerUids),
       }
     }
     case 'REMOVE_GENERATOR': {
@@ -76,6 +79,7 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
         ...state,
         generators: state.generators.filter((g) => g.uid !== action.uid),
         matrix: removeGeneratorFromMatrix(state.matrix, action.uid),
+        consumptionMatrix: removeGeneratorFromMatrix(state.consumptionMatrix, action.uid),
       }
     }
     case 'UPDATE_GENERATOR_SIZING': {
@@ -97,7 +101,35 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
         },
       }
     }
+    case 'SET_CONSUMPTION_ALLOCATION': {
+      const clamped = Math.max(0, action.percent)
+      const row = state.consumptionMatrix[action.generatorUid] ?? {}
+      return {
+        ...state,
+        consumptionMatrix: {
+          ...state.consumptionMatrix,
+          [action.generatorUid]: { ...row, [action.consumerUid]: clamped },
+        },
+      }
+    }
     case 'ALLOCATE_EVENLY': {
+      if (state.allocationMode === 'consumption-share') {
+        // Each consumer gets 100 % split equally across generators
+        const nGens = state.generators.length
+        if (nGens === 0) return state
+        const shares = evenShares(nGens)
+        const consumptionMatrix: PortfolioMatrix = {}
+        for (let gi = 0; gi < state.generators.length; gi++) {
+          const g = state.generators[gi]
+          const row: Record<string, number> = {}
+          for (const c of state.consumers) {
+            row[c.uid] = shares[gi]
+          }
+          consumptionMatrix[g.uid] = row
+        }
+        return { ...state, consumptionMatrix }
+      }
+      // generator-share mode: existing behaviour
       const n = state.consumers.length
       if (n === 0) return state
       const shares = evenShares(n)
@@ -114,13 +146,16 @@ export function portfolioReducer(state: PortfolioState, action: PortfolioAction)
     case 'SET_GRANULARITY': {
       return { ...state, granularity: action.granularity }
     }
+    case 'SET_ALLOCATION_MODE': {
+      return { ...state, allocationMode: action.mode }
+    }
     case 'LOAD_STATE': {
       return action.state
     }
   }
 }
 
-/** Distribute 100 % evenly across n consumers, rounding to integers that sum to 100. */
+/** Distribute 100 % evenly across n items, rounding to integers that sum to 100. */
 export function evenShares(n: number): number[] {
   if (n <= 0) return []
   const base = Math.floor(100 / n)
