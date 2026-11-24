@@ -465,6 +465,33 @@ export function ResultsTab() {
         />
       </div>
 
+      {/* Explanatory copy */}
+      <details className="results-tab__help content-card" data-testid="results-help">
+        <summary className="results-tab__help-summary">About these results</summary>
+        <div className="results-tab__help-body">
+          <p>
+            <strong>Hourly matching score</strong> measures what percentage of demand was met by generation in
+            the same hour. It is the strictest temporal-matching metric: only energy generated in the exact
+            hour it is consumed counts as matched.
+          </p>
+          <p>
+            <strong>Annual (volumetric) score</strong> compares total allocated generation to total demand
+            over the year. Because it ignores timing, it can exceed 100 % when more energy is allocated than
+            consumed — the surplus simply arrives in the wrong hours.
+          </p>
+          <p>
+            <strong>Shape preservation</strong> means a generator's allocation follows its own hourly output
+            profile. Output is never moved into hours where it did not generate. With hourly matching, the
+            shape is clipped at each hour's demand instead.
+          </p>
+          <p>
+            <strong>Demo scenario:</strong> one Data centre consumer (50,000 MWh flat demand) with two
+            generators — Solar PV temperate (24,090 MWh) and Wind onshore temperate (26,280 MWh) — both
+            allocated 100 % to the consumer at hourly granularity.
+          </p>
+        </div>
+      </details>
+
       {/* Chart 1 — Average 24-hour profile */}
       {avgDayConfig && (
         <div className="results-tab__chart-card content-card" data-testid="chart-average-day">
