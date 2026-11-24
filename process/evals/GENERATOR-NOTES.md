@@ -1,68 +1,75 @@
-# Generator notes — Milestone M6: HubSpot sign-up gate
+# Generator notes — Milestone M7: "Set % of consumption" allocation mode
 
 ## What was built
 
-All 19 M6 criteria addressed. Summary of changes:
+All 25 M7 criteria addressed. Summary of changes:
 
-### Core files
+### Engine (M7.12, M7.13, M7.25)
 
-1. **`src/config.ts`** (M6.1, M6.18) — Centralised HubSpot configuration:
-   - `HUBSPOT_PORTAL_ID` = `'25772642'`
-   - `HUBSPOT_REGION` = `'eu1'`
-   - `HUBSPOT_FORM_ID` = `'REPLACE_WITH_FORM_ID'`
-   - `HUBSPOT_EMBED_URL` = `'https://js-eu1.hsforms.net/forms/embed/v2.js'`
-   - `isHubSpotConfigured()` returns `false` for the placeholder string
+1. **`src/engine/types.ts`** — Added `AllocationMode` type (`'generator-share' | 'consumption-share'`) and optional `allocationMode` / `consumptionMatrix` fields on `EngineInput`.
 
-2. **`src/io/signupGate.ts`** (M6.5, M6.6, M6.7, M6.8, M6.16) — Gate state helpers:
-   - `hasSignedUp()` — reads `scenario-tool.signedUp` from localStorage, validates ISO format
-   - `markSignedUp()` — writes current timestamp
-   - `getSignedUpTimestamp()` — returns raw timestamp or null
+2. **`src/engine/score.ts`** — Added `buildConsumptionShareSupplies()` function. In consumption-share mode, each pair's supply = generator normalised shape × (pct/100 × consumer demand total). Generator utilisation sets `unallocatedMWh: 0` and `totalGenerationMWh` to the assigned total.
 
-3. **`src/components/layout/SignUpGate.tsx`** (M6.2–M6.12) — React component:
-   - **Always loads the HubSpot embed script first** (`'loading'` → script loaded → branch on `isHubSpotConfigured()`). This ensures the error state is reachable even with the placeholder form ID, by blocking the script network request.
-   - If script loads and form ID is placeholder → `'dev'` state with "Development mode" notice and "Continue without signing up" button
-   - If script loads and form ID is configured → `'form'` state with embedded HubSpot form
-   - If script fails (network blocked or 5-second timeout) → `'error'` state with "could not load" message, contact link, no Continue button (tool stays locked)
-   - Full-screen modal overlay with blurred, pointer-events-none backdrop
-   - `?signedUp=1` query param bypass, idempotent (preserves existing timestamp)
-   - Focus trap: Tab/Shift+Tab cycling within modal; redirects focus inside modal if active element is outside
-   - Auto-focus on first focusable element when state changes
-   - Responsive at 375px with 44px touch targets
-   - All design tokens from CSS variables, zero hardcoded hex values
+### State (M7.1, M7.2, M7.10)
 
-4. **`src/App.tsx`** — Wrapped entire app with `<SignUpGate>` inside `<PortfolioProvider>`
+3. **`src/state/portfolioTypes.ts`** — Added `allocationMode` and `consumptionMatrix` to `PortfolioState`. New actions: `SET_ALLOCATION_MODE`, `SET_CONSUMPTION_ALLOCATION`.
 
-5. **`src/styles/app.css`** — Gate-specific CSS using only design tokens
+4. **`src/state/portfolioReducer.ts`** — All matrix-modifying actions (ADD/REMOVE consumer/generator) manage both matrices. `ALLOCATE_EVENLY` branches: in consumption-share, 100% split across generators per consumer (M7.11). `SET_ALLOCATION_MODE` and `SET_CONSUMPTION_ALLOCATION` handled.
+
+5. **`src/state/demoPortfolio.ts`** — Demo starts in `generator-share` with empty `consumptionMatrix` (zeros).
+
+6. **`src/state/persistence.ts`** — Migration for pre-M7 localStorage: adds defaults for missing `allocationMode`/`consumptionMatrix`.
+
+7. **`src/state/usePortfolio.ts`** — `EMPTY_STATE` updated. Engine invocation passes `allocationMode` and `consumptionMatrix`. `hasAllocation` checks the active matrix.
+
+### IO (M7.17, M7.18)
+
+8. **`src/io/scenarioIO.ts`** — `ScenarioFile` accepts optional `allocationMode`/`consumptionMatrix`. Export includes both. Import defaults to `'generator-share'` / empty matrix when absent.
+
+### UI (M7.3–M7.9, M7.14–M7.16, M7.19–M7.22)
+
+9. **`src/components/allocation/AllocationTab.tsx`** — Segmented toggle (`data-testid="allocation-mode-toggle"`) with two options. Mode-specific description text below.
+
+10. **`src/components/allocation/AllocationMatrix.tsx`** — Uses `activeMatrix` based on mode. In consumption-share: cells edit `consumptionMatrix`, MWh = pct/100 × consumer.annualMWh, row totals show assigned MWh, column totals show `consumer-allocated-pct` with amber warning class when >100%.
+
+11. **`src/components/layout/ScoreStrip.tsx`** — Label changes to "Assigned" and shows engine result totals in consumption-share mode.
+
+12. **`src/components/results/ResultsTab.tsx`** — Prepends "Set % of consumption ·" to results header when in consumption-share mode.
+
+13. **`src/components/compare/AssumptionsTable.tsx`** — Added "Allocation mode" row (first row). Matrix summary uses the active matrix for each scenario's mode.
+
+14. **`src/components/report/pdfReport.ts`** — Cover page shows allocation mode label. Matrix heading changes per mode. `drawAllocationMatrix` uses the active matrix. Comparison PDF assumptions table includes "Allocation mode" row.
+
+15. **`src/styles/app.css`** — `.allocation-mode-toggle` segmented toggle styles (teal active). Warning colour changed from `--ge-error` to `--ge-warning` (#B25E09).
 
 ### Tests
 
-6. **`src/io/__tests__/signupGate.test.ts`** — 10 unit tests for gate state logic (M6.16)
-7. **`src/io/__tests__/config.test.ts`** — 5 unit tests for config exports (M6.1)
-8. **`tests/e2e/m6-signup-gate.spec.ts`** — 11 e2e tests covering M6.2–M6.14
+16. **`src/engine/__tests__/engine.test.ts`** — Two new tests: consumption-share 15% of 50k MWh = 7,500 MWh solar shape; generator utilisation reports zero unallocatedMWh.
 
-### Existing test updates
+17. **`src/io/__tests__/scenarioIO.test.ts`** — Backward-compatible import test (pre-M7 file defaults to generator-share).
 
-9. **All 8 existing e2e spec files updated** (M6.15) — Added `localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())` after every `localStorage.clear()` call
+18. **`tests/e2e/m7-consumption-share.spec.ts`** — 20 Playwright tests covering M7.1–M7.22 (persistence, toggle, cell math, warnings, mode switching, allocate evenly, score strip, results header, Sankey, scenario save, compare assumptions, PDF download, mobile viewport, reload persistence).
 
-### Downloads
-
-10. **PDF/JSON downloads ungated** (M6.13, M6.14) — No per-download gate existed; the whole-app gate is the only gate
-
-11. **Engine purity preserved** (M6.19) — No imports from config/components/state in `src/engine/`
+19. **Updated test helpers** — `emptyState()` in reducer test and `makeSavedScenario` in scenario store test include new required fields.
 
 ## Test results
 
 - `npm run typecheck` — 0 errors
-- `npm test` — 152 unit tests pass (16 files)
+- `npm test` — 156 unit tests pass (16 files)
 - `npm run lint` — 0 errors
-- `npm run test:e2e` — 93 e2e tests pass (9 spec files)
+- `npm run build` — succeeds
 
 ## What could not be finished
 
-Nothing — all 19 criteria addressed.
+Nothing — all 25 criteria addressed.
 
 ## Notes for the evaluator
 
-- **M6.9 fix from previous attempt**: The component now always starts in `'loading'` state and attempts to load the HubSpot embed script, regardless of whether the form ID is a placeholder. This means blocking `**/js-eu1.hsforms.net/**` via `page.route()` will trigger `script.onerror` → error state, even with the placeholder form ID. The error state shows "could not load" text, a `granular-energy.com/contact` link, and no Continue button.
-- **Dev mode**: The HubSpot script loads from the CDN, and once it loads, `isHubSpotConfigured()` returns false for the placeholder → dev mode with Continue button. This path works in all tests that don't block the network.
-- **Testing the gate**: Navigate to `http://localhost:4173` after clearing localStorage to see the gate. The script loads from `js-eu1.hsforms.net`, detects the placeholder form ID, and shows dev mode. Click "Continue without signing up" to dismiss. Navigate to `/?signedUp=1` to bypass.
+- **Demo portfolio**: Starts in generator-share mode with the same golden-fixture results. The consumption matrix is all zeros. Switching to consumption-share mode does not affect any existing tests or scores.
+- **Testing the toggle**: Navigate to Allocation tab → click "Set % of consumption" → cells now edit the consumption matrix. Enter 15 in a cell for the demo's Data centre (50,000 MWh) to see the 7,500 MWh annotation.
+- **Allocate evenly**: In consumption-share with the demo portfolio (1 consumer, 2 generators), both cells become 50%.
+- **Over-allocation warning**: Set both generators to 60% each — the consumer column total shows 120% with amber styling and a tooltip about excess energy.
+- **Sankey**: In consumption-share mode, generator utilisation reports 0 unallocated MWh, so no "Surplus" nodes appear.
+- **Backward compatibility**: Importing a pre-M7 scenario JSON (no `allocationMode` field) loads as generator-share with an empty consumption matrix. All golden fixture tests pass unchanged.
+- **Sign-up flag**: E2e tests set `localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())` after `localStorage.clear()`.
+- **Mobile**: The allocation-mode toggle wraps to a column layout at narrow widths (375px tested) with no horizontal overflow.
