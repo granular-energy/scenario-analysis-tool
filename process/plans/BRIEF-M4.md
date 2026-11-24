@@ -9,3 +9,9 @@ In scope:
 - HubSpot gate: before any PDF download, show a modal with the HubSpot form (portal/form IDs from `src/config.ts`, placeholders until marketing supplies them, with a visible "development mode: form not configured" notice when placeholders are in use). On form submit, unlock downloads and remember in localStorage.
 
 Out of scope: hourly CSV export, backend storage, accounts.
+
+Context since this brief was written (2026-11-06 decisions, already in the code):
+- The selector on the Allocation tab is called "Allocation method" (not "matching granularity"); options run as produced → annual target → monthly target → hourly only. Use "allocation method" in all new user-facing copy, including Compare tables and PDFs.
+- The annual score is volumetric (generation assigned via the matrix ÷ consumption) and can exceed 100 %. Compare tiles and PDFs must use `MatchingSummary.annualScore` as-is, not recompute it.
+- Matching scores appear in the score strip on the Allocation tab only; the Results tab has tiles. Do not add scores to the strip on other tabs.
+- Playwright always builds before serving (`playwright.config.ts`); never start a separate preview on port 4173 during evaluation (see process/FEEDBACK.md, 2026-11-06).
