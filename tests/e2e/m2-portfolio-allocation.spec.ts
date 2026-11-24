@@ -86,8 +86,11 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
   })
 
   test('M2.9 Portfolio members show shape previews', async ({ page }) => {
+    // Wait for the demo portfolio to load (profiles are lazy-loaded)
+    await expect(page.locator('.member-card').first()).toBeVisible()
     // Check that sparkline SVGs are rendered
     const sparklines = page.locator('.sparkline')
+    await expect(sparklines.first()).toBeVisible()
     const count = await sparklines.count()
     expect(count).toBeGreaterThanOrEqual(3) // 1 consumer + 2 generators in demo
   })

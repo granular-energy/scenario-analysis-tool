@@ -182,6 +182,8 @@ describe('runEngine', () => {
     const matrix = Object.fromEntries(
       five('g', 1).map((g) => [g.id, Object.fromEntries(five('c', 1).map((c) => [c.id, 20]))]),
     )
+    // Warmup run to let the JIT optimise hot paths before timing
+    runEngine({ consumers: five('c', 10), generators: five('g', 30), matrix, granularity: 'hourly' })
     const started = performance.now()
     runEngine({ consumers: five('c', 10), generators: five('g', 30), matrix, granularity: 'hourly' })
     expect(performance.now() - started).toBeLessThan(50)
