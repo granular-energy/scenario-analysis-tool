@@ -32,7 +32,7 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
     await expect(page.locator('[data-testid="results-tab"]')).toBeVisible()
 
     await page.click('[data-tab="compare"]')
-    await expect(page.locator('[data-testid="compare-placeholder"]')).toBeVisible()
+    await expect(page.locator('[data-testid="compare-tab"]')).toBeVisible()
   })
 
   test('M2.3 CTA band links to granular-energy.com in new tab', async ({ page }) => {
@@ -236,7 +236,9 @@ test.describe('M2: Portfolio and Allocation tabs', () => {
     await expect(page.locator('input[value="hourly"]')).toBeChecked()
   })
 
-  test('M2.21 Score strip shows portfolio totals on every tab, scores only on Allocation', async ({ page }) => {
+  test('M2.21 Score strip shows portfolio totals on every tab, scores only on Allocation', async ({
+    page,
+  }) => {
     const strip = page.locator('[data-testid="score-strip"]')
     await expect(strip).toBeVisible()
     await expect(strip).toContainText('Whole portfolio')
