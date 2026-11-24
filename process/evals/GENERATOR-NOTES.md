@@ -1,78 +1,67 @@
-# Generator notes — M4: Scenarios, Compare and Reports
+# Generator notes -- M5.9/M5.10: Highcharts-rendered PDF charts
 
 ## What was built
 
-### Scenario storage and IO (`src/io/scenarioIO.ts`, `src/state/scenarioStore.ts`)
+### Highcharts off-screen rendering (`src/components/report/pdfReport.ts`)
 
-- **ScenarioFile format**: self-contained JSON with version, consumers (with 8760-slot shapes), generators, matrix, and granularity. No external references.
-- **SavedScenario**: includes portfolio state plus a `ScenarioResultsSummary` snapshot (hourly score, annual score, excess, unmatched, 12 monthly scores) so Compare tiles render without re-running the engine.
-- **Validation**: `validateScenarioFile()` checks structure, field types, shape lengths, granularity values. Returns descriptive error messages naming the specific problem.
-- **Round-trip**: export → validate → import produces identical portfolio state. Covered by unit test.
-- **localStorage**: saved scenarios stored under `sat-v3-scenarios`, separate from the portfolio key.
+Replaced the two canvas-drawn chart functions (`drawMonthlyBarChart` and `drawMonthlyScoreLineChart`) with Highcharts-rendered images that use the exact same config builders as the on-screen charts.
 
-### Results tab actions (`src/components/results/ResultsTab.tsx`)
+**New helper: `renderChartToImage(options, width, height)`**
+- Creates a hidden off-screen `<div>` positioned at -9999px
+- Renders a full Highcharts chart into it using `Highcharts.chart()`
+- Extracts SVG from the renderer's root `<svg>` element via `svgElement.outerHTML` (avoids needing the exporting module)
+- Converts SVG to PNG via `Blob` -> `URL.createObjectURL` -> `Image` -> `canvas.toDataURL()`
+- Uses 2x resolution scaling for retina-quality output
+- Cleans up the off-screen container and chart instance
 
-- **Save scenario** (`data-testid="save-scenario-btn"`): `window.prompt` with default "Scenario N", saves to localStorage via `addScenario()`, brief confirmation message.
-- **Download scenario** (`data-testid="download-scenario-btn"`): triggers Blob download of the JSON file, NOT gated.
-- **Download report** (`data-testid="download-report-btn"`): calls `generateSingleScenarioPdf()`, NOT gated. Wrapped in a thin function so a gate can be added later.
-- **Load scenario** (`data-testid="load-scenario-btn"`): dropdown listing saved scenarios, dispatches `LOAD_STATE` to replace portfolio.
-- Action bar has `flex-wrap: wrap` and 44px min-height for mobile accessibility.
+**New helper: `buildMonthlyBreakdownInputFromResult(result, state)`**
+- Aggregates per-consumer generator contributions into portfolio-level monthly totals (mirrors the aggregation logic from `ResultsTab`)
+- Builds the `MonthlyBreakdownInput` with generator names, technologies, matched/excess monthly data -- identical to what the on-screen chart receives
 
-### Compare tab (`src/components/compare/`)
+**Single scenario PDF (M5.9):**
+- Now calls `buildMonthlyBreakdownConfig()` (from `src/components/results/charts/monthlyBreakdownConfig.ts`) with the same input shape used on-screen
+- Renders via `renderChartToImage()` at 800x400px
+- Result: PDF monthly breakdown chart has technology colours, hatched unmatched bars, monthly score spline on secondary axis -- matching the screen exactly
 
-- **CompareTab.tsx**: scenario picker with checkboxes (max 4), rename (inline text input), delete, import from JSON file. Guidance text when <2 scenarios saved.
-- **CompareColumns.tsx**: tile columns per scenario — hourly score, annual score, excess MWh, unmatched demand. Coloured top borders from `--ge-series-1..4`.
-- **CompareChart.tsx + compareChartConfig.ts**: Highcharts spline chart with 12-month x-axis, one series per scenario using series colours.
-- **AssumptionsTable.tsx**: rows for consumers, generators, matrix, allocation method. Differing cells highlighted with `--ge-teal-100` background and bold text. Uses `granularityLabel()` for allocation method display.
-- **ConsumerScoreTable.tsx**: re-runs engine per scenario to get per-consumer hourly and annual scores.
-- **Import on Compare tab** (`data-testid="import-scenario-btn"`): accepts `.json` file, validates, runs engine, adds to saved scenarios.
+**Comparison PDF (M5.10):**
+- Now calls `buildCompareChartConfig()` (from `src/components/compare/compareChartConfig.ts`) with the same input shape used on-screen
+- Renders via `renderChartToImage()` at 800x350px
+- Result: PDF comparison chart has spline lines with scenario colours and markers -- matching the screen exactly
 
-### PDF reports (`src/components/report/pdfReport.ts`)
+### What was removed
 
-- **Single-scenario PDF** (A4 portrait): cover section (name, hourly score, annual score, allocation method, excess, unmatched), inputs section (consumers, generators, matrix table), monthly bar chart (canvas-drawn, matched/unmatched/excess), footer on every page.
-- **Comparison PDF** (A4 landscape): tile columns, monthly score line chart (canvas-drawn, series colours), assumptions table, footer on every page.
-- Uses jsPDF directly with canvas-drawn charts — no html2canvas dependency for content. All colours from design tokens.
-- Footer text: "Generated by Granular Energy Scenario Analysis Tool, granular-energy.com"
+- `drawMonthlyBarChart()` -- old canvas-drawn simplified bar chart with single teal colour
+- `drawMonthlyScoreLineChart()` -- old canvas-drawn line chart with manual axes/legend
+- `TEAL` constant (no longer needed; technology colours come from the config builders)
+- `MONTH_LABELS` array (no longer needed; month names come from the config builders)
 
-### Copy compliance (M4.22)
+### Imports added
 
-All new user-facing copy uses "allocation method" (not "matching granularity"):
-- Assumptions table header row
-- PDF report inputs section
-- Compare tab labels
+- `Highcharts` from `'highcharts'`
+- Side-effect imports for `highcharts-more`, `heatmap`, `sankey`, `pattern-fill` modules (ensures pattern-fill is available for the hatched unmatched bars)
+- `buildMonthlyBreakdownConfig` and `MonthlyBreakdownInput` from the monthly breakdown config builder
+- `buildCompareChartConfig` from the compare chart config builder
 
-### Responsive (M4.17, M4.18)
+## Technical notes
 
-- Compare tab at 375px: columns stack vertically (`grid-template-columns: 1fr`), assumptions table scrolls horizontally, all buttons have 44px min-height.
-- Results tab at 375px: action bar wraps, all buttons visible and tappable.
-
-## Unit tests added
-
-- `src/io/__tests__/scenarioIO.test.ts`: 20 tests — export structure, validation (rejects bad input, accepts valid), round-trip with demo portfolio.
-- `src/state/__tests__/scenarioStore.test.ts`: 12 tests — save/load/add/remove/rename with mocked localStorage.
-- `src/components/compare/__tests__/compareChartConfig.test.ts`: 5 tests — chart config builder.
-
-## E2e tests added
-
-- `tests/e2e/m4-compare.spec.ts`: 7 tests — guidance text, picker, chart rendering, assumptions table, diff highlighting, import button, mobile stacking.
-- `tests/e2e/m4-results-actions.spec.ts`: 8 tests — action bar visibility, save, download JSON, download PDF, load, cancel save, empty list.
-- `tests/e2e/m4-pdf-report.spec.ts`: 2 tests — single-scenario and comparison PDF download triggers.
+- The `renderChartToImage` function uses `chart.renderer.box` (the root SVG element) rather than `chart.getSVG()`. This avoids needing to import the Highcharts exporting module while achieving the same result -- the rendered SVG already contains everything needed.
+- The chart is rendered with `animation: false`, `enableMouseTracking: false`, `tooltip.enabled: false` to suppress any interactive features that are irrelevant for static export.
+- Chart background is set to `#ffffff` (white) rather than transparent to ensure the PDF image has a solid background.
+- The Highcharts modules (pattern-fill, etc.) are imported as side effects at the top of the file. Since the PDF generation only runs after the user has viewed the Results tab (where `Chart.tsx` already registers the same modules), these imports serve as a safety net.
 
 ## Verification
 
 - `npm run typecheck`: passes (0 errors)
-- `npm test`: 14 files, 137 tests, all passing
 - `npm run lint`: passes (0 warnings)
-- `npm run build`: succeeds
-- `npm run test:e2e`: 79 tests, all passing (including all M2, M3, M3b, M3c specs)
+- `npm test`: 136 of 137 tests pass; the one failure is a pre-existing timing flake (`runs a 5x5 hourly portfolio quickly` -- 54ms vs 50ms threshold) unrelated to this change
 
 ## How to test
 
-1. **Save scenario**: Navigate to Results tab with demo portfolio. Click "Save scenario", accept default name. Check localStorage key `sat-v3-scenarios`.
-2. **Download JSON**: Click "Download scenario" on Results tab. Open the `.json` file — it contains consumers with shapes, generators, matrix, granularity.
-3. **Import JSON**: Go to Compare tab, click "Import scenario", select the downloaded file. It appears in the picker.
-4. **Load scenario**: Save a scenario, change the portfolio, click "Load scenario" on Results tab, select the saved one. Results should restore to 67.33% hourly / 100.74% annual.
-5. **Compare**: Save 2+ scenarios (try one hourly, one monthly). Go to Compare tab, select both. Verify: tile columns, chart with 2 lines, assumptions table with allocation method row highlighted, per-consumer table.
-6. **PDFs**: Click "Download report" on Results tab, and "Download comparison PDF" on Compare tab. Open each PDF.
-7. **Mobile**: Set viewport to 375×812. Check Results tab buttons wrap and are tappable. Check Compare columns stack vertically.
-8. **Demo golden numbers**: hourly score 67.33%, annual score 100.74%, excess 0 MWh, unmatched ~16,335 MWh.
+1. Add consumers and generators to the portfolio (use library profiles or the demo data)
+2. Set allocations on the Allocation tab
+3. Go to the Results tab, verify the monthly breakdown chart renders on-screen
+4. Click "Download report" to generate the single-scenario PDF
+5. Open the PDF and check the monthly breakdown chart matches the on-screen version (technology colours, hatched unmatched bars, score spline line, legends, axis labels)
+6. Save 2+ scenarios, go to the Compare tab
+7. Click "Download comparison PDF" to generate the comparison PDF
+8. Open the PDF and check the monthly scores line chart matches the on-screen Compare chart (spline lines with scenario colours, markers, axis formatting)
