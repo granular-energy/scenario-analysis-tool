@@ -248,6 +248,8 @@
   font-size: 14px;
   color: var(--ge-text-muted);
   padding: 2px 6px;
+  min-height: 44px;
+  min-width: 44px;
   border-radius: var(--ge-radius-sm);
 }
 
