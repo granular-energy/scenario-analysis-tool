@@ -45,12 +45,54 @@ export function allocateToConsumer(
     return allocations
   }
 
-  const windowSupply = new Array<number>(supplies.length)
-  const order = supplies.map((_, i) => i)
   // The platform preserves shape at half-hourly resolution, so with hourly matching each hour is served in
   // two half-hour passes: every generator offers half its hour in each pass, largest first. The hour's total
   // is unchanged but the split between generators interleaves, and the golden fixtures reflect that.
-  const passes = granularity === 'hourly' ? 2 : 1
+
+  // ---- Fast path for hourly: each window is a single hour, so shape-preservation is trivial
+  //      (s[h] * scale = quantity) and we can skip window-object allocation entirely.
+  if (granularity === 'hourly') {
+    const n = supplies.length
+    const order = new Array<number>(n)
+    for (let i = 0; i < n; i++) order[i] = i
+
+    for (let h = 0; h < HOURS_PER_YEAR; h++) {
+      let remaining = demandMWh[h]
+      if (remaining <= NEGLIGIBLE_MWH) continue
+
+      // Stable insertion sort by descending supply at this hour (N ≤ 5)
+      for (let i = 0; i < n; i++) order[i] = i
+      for (let i = 1; i < n; i++) {
+        const key = order[i]
+        const keyVal = supplies[key].supplyMWh[h]
+        let j = i - 1
+        while (j >= 0 && supplies[order[j]].supplyMWh[h] < keyVal) {
+          order[j + 1] = order[j]
+          j--
+        }
+        order[j + 1] = key
+      }
+
+      // Two half-passes (platform interleaving)
+      for (let pass = 0; pass < 2; pass++) {
+        for (let oi = 0; oi < n; oi++) {
+          const idx = order[oi]
+          const halfSupply = supplies[idx].supplyMWh[h] / 2
+          if (halfSupply <= NEGLIGIBLE_MWH) continue
+          const quantity = Math.min(halfSupply, remaining)
+          if (quantity <= NEGLIGIBLE_MWH) continue
+          allocations[idx][h] += quantity
+          remaining -= quantity
+        }
+      }
+    }
+    return allocations
+  }
+
+  // ---- General path for monthly / annual windows
+  const passes = 1
+  const windowSupply = new Array<number>(supplies.length)
+  const order = supplies.map((_, i) => i)
 
   for (const { start, end } of windowsFor(granularity)) {
     let remaining = 0

@@ -184,6 +184,6 @@ describe('runEngine', () => {
     )
     const started = performance.now()
     runEngine({ consumers: five('c', 10), generators: five('g', 30), matrix, granularity: 'hourly' })
-    expect(performance.now() - started).toBeLessThan(200)
+    expect(performance.now() - started).toBeLessThan(50)
   })
 })
