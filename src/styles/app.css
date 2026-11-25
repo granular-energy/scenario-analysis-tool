@@ -1596,10 +1596,12 @@
   inset: 0;
   z-index: 200;
   display: flex;
-  align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
   padding: var(--ge-space-sm);
+  /* The embedded form can be taller than the viewport: let the overlay scroll instead of clipping the card */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .signup-gate__card {
@@ -1609,6 +1611,9 @@
   box-shadow: var(--ge-shadow-lg);
   max-width: 480px;
   width: 100%;
+  /* Centred when it fits, top-aligned and scrollable when it does not */
+  margin: auto;
+  flex: 0 0 auto;
   padding: var(--ge-space-lg);
   animation: contentShow var(--ge-duration-fast) var(--ge-ease);
 }

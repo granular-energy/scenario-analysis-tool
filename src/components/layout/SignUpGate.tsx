@@ -8,6 +8,9 @@ import {
 } from '../../config'
 import { hasSignedUp, markSignedUp } from '../../io/signupGate'
 
+/** Window event the HubSpot per-portal embed fires once a submission is accepted. */
+export const HUBSPOT_SUBMITTED_EVENT = 'hs-form-event:on-submission:success'
+
 type GateState = 'loading' | 'form' | 'dev' | 'error' | 'dismissed'
 
 /**
@@ -16,7 +19,7 @@ type GateState = 'loading' | 'form' | 'dev' | 'error' | 'dismissed'
  * Always attempts to load the HubSpot embed script first. If the script
  * loads successfully and the form ID is configured, the embedded form
  * (an iframe hydrated by the script) is shown and submission is detected
- * through HubSpot's `hsFormCallback` postMessage events. If the script loads but the form ID is a placeholder, the
+ * through HubSpot's `hs-form-event:on-submission:success` window event. If the script loads but the form ID is a placeholder, the
  * development-mode bypass is shown. If the script fails to load (network
  * blocked or 5-second timeout), the error fallback is shown with a contact
  * link and no bypass — the tool remains locked.
@@ -72,21 +75,29 @@ export function SignUpGate({ children }: { children: React.ReactNode }) {
     }
   }, [state])
 
-  // The embedded form runs in an iframe and reports back via postMessage.
+  // The per-portal embed script dispatches a bubbling CustomEvent on the form container when the
+  // submission succeeds. The legacy v2 embed instead posted an `hsFormCallback` message from the
+  // iframe; keep accepting that too so the gate works with either loader.
   useEffect(() => {
     if (state !== 'loading' && state !== 'form') return
+
+    function unlock() {
+      markSignedUp()
+      setState('dismissed')
+    }
 
     function handleMessage(e: MessageEvent) {
       const data = e.data as { type?: string; eventName?: string } | null
       if (!data || data.type !== 'hsFormCallback') return
-      if (data.eventName === 'onFormSubmitted') {
-        markSignedUp()
-        setState('dismissed')
-      }
+      if (data.eventName === 'onFormSubmitted') unlock()
     }
 
+    window.addEventListener(HUBSPOT_SUBMITTED_EVENT, unlock)
     window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
+    return () => {
+      window.removeEventListener(HUBSPOT_SUBMITTED_EVENT, unlock)
+      window.removeEventListener('message', handleMessage)
+    }
   }, [state])
 
   // Focus trap: keep focus inside the modal
