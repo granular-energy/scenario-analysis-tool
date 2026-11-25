@@ -12,9 +12,7 @@ import {
   createScenarioResultsSummary,
 } from '../../io/scenarioIO'
 import type { SavedScenario } from '../../io/scenarioIO'
-import { runEngine } from '../../engine'
-import type { Consumer, Generator } from '../../engine/types'
-import type { PortfolioConsumer, PortfolioGenerator } from '../../state/portfolioTypes'
+import { runPortfolioEngine } from '../../state/runPortfolioEngine'
 import { loadScenarios, saveScenarios, removeScenario, renameScenario } from '../../state/scenarioStore'
 import { generateComparisonPdf } from '../report/pdfReport'
 import type { ComparisonScenario } from '../report/pdfReport'
@@ -38,18 +36,6 @@ function uniqueName(name: string, existing: readonly SavedScenario[]): string {
   let n = 2
   while (taken.has(`${name} (${n})`)) n++
   return `${name} (${n})`
-}
-
-function scaleConsumer(c: PortfolioConsumer): Consumer {
-  const total = c.shape.reduce((a, b) => a + b, 0)
-  const demandMWh = total > 0 ? c.shape.map((v) => (v / total) * c.annualMWh) : c.shape.map(() => 0)
-  return { id: c.uid, demandMWh }
-}
-
-function scaleGenerator(g: PortfolioGenerator): Generator {
-  const total = g.shape.reduce((a, b) => a + b, 0)
-  const generationMWh = total > 0 ? g.shape.map((v) => (v / total) * g.annualMWh) : g.shape.map(() => 0)
-  return { id: g.uid, generationMWh }
 }
 
 export function CompareTab() {
@@ -125,31 +111,12 @@ export function CompareTab() {
 
         const portfolioState = scenarioFileToPortfolioState(validation.file)
 
-        const consumers = portfolioState.consumers.map(scaleConsumer)
-        const generators = portfolioState.generators.map(scaleGenerator)
-        const activeMatrix =
-          portfolioState.allocationMode === 'consumption-share'
-            ? portfolioState.consumptionMatrix
-            : portfolioState.matrix
-        const hasAllocation = portfolioState.generators.some((g) => {
-          const row = activeMatrix[g.uid]
-          return row && Object.values(row).some((v) => v > 0)
-        })
-
-        if (!hasAllocation || consumers.length === 0 || generators.length === 0) {
+        const engineResult = runPortfolioEngine(portfolioState)
+        if (!engineResult) {
           setImportError('The imported scenario has no valid allocations')
           setImportSuccess(null)
           return
         }
-
-        const engineResult = runEngine({
-          consumers,
-          generators,
-          matrix: portfolioState.matrix,
-          granularity: portfolioState.granularity,
-          allocationMode: portfolioState.allocationMode,
-          consumptionMatrix: portfolioState.consumptionMatrix,
-        })
 
         // Exported files all carry a default name, so the file name is the one the user actually chose
         const existing = loadScenarios()

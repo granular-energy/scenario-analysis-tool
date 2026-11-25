@@ -4,22 +4,9 @@
  */
 
 import { Fragment, useMemo } from 'react'
-import { runEngine } from '../../engine'
-import type { Consumer, ConsumerResult, Generator } from '../../engine/types'
+import type { ConsumerResult } from '../../engine/types'
 import type { SavedScenario } from '../../io/scenarioIO'
-import type { PortfolioConsumer, PortfolioGenerator } from '../../state/portfolioTypes'
-
-function scaleConsumer(c: PortfolioConsumer): Consumer {
-  const total = c.shape.reduce((a, b) => a + b, 0)
-  const demandMWh = total > 0 ? c.shape.map((v) => (v / total) * c.annualMWh) : c.shape.map(() => 0)
-  return { id: c.uid, demandMWh }
-}
-
-function scaleGenerator(g: PortfolioGenerator): Generator {
-  const total = g.shape.reduce((a, b) => a + b, 0)
-  const generationMWh = total > 0 ? g.shape.map((v) => (v / total) * g.annualMWh) : g.shape.map(() => 0)
-  return { id: g.uid, generationMWh }
-}
+import { runPortfolioEngine } from '../../state/runPortfolioEngine'
 
 interface ScenarioConsumerScores {
   readonly scenarioId: string
@@ -33,29 +20,10 @@ interface ConsumerScoreTableProps {
 export function ConsumerScoreTable({ scenarios }: ConsumerScoreTableProps) {
   // Re-run the engine for each scenario to get per-consumer results
   const scenarioResults: readonly ScenarioConsumerScores[] = useMemo(() => {
-    return scenarios.map((scenario) => {
-      const consumers = scenario.portfolio.consumers.map(scaleConsumer)
-      const generators = scenario.portfolio.generators.map(scaleGenerator)
-
-      // Check if any generator has a non-zero allocation
-      const hasAllocation = scenario.portfolio.generators.some((g) => {
-        const row = scenario.portfolio.matrix[g.uid]
-        return row && Object.values(row).some((v) => v > 0)
-      })
-
-      if (!hasAllocation || consumers.length === 0 || generators.length === 0) {
-        return { scenarioId: scenario.id, consumers: [] }
-      }
-
-      const result = runEngine({
-        consumers,
-        generators,
-        matrix: scenario.portfolio.matrix,
-        granularity: scenario.portfolio.granularity,
-      })
-
-      return { scenarioId: scenario.id, consumers: result.consumers }
-    })
+    return scenarios.map((scenario) => ({
+      scenarioId: scenario.id,
+      consumers: runPortfolioEngine(scenario.portfolio)?.consumers ?? [],
+    }))
   }, [scenarios])
 
   // Build a union of all consumer IDs and names across all scenarios

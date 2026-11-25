@@ -412,6 +412,11 @@ test.describe('Compare import of consumption-share scenarios', () => {
     await expect(page.locator('[data-testid="download-comparison-pdf"]')).toBeVisible()
     await expect(page.locator('[data-testid="compare-tab"]')).toContainText('Set % of consumption')
 
+    // Per-consumer scores are computed in the file's mode, not left blank
+    const scoreCells = page.locator('[data-testid="consumer-score-table"] tbody .assumptions-table__cell')
+    await expect(scoreCells).toHaveCount(4)
+    for (let i = 0; i < 4; i++) await expect(scoreCells.nth(i)).toHaveText(/\d+\.\d{2} %/)
+
     // Importing the same file again gets a distinct name
     await page.locator('input[type="file"]').setInputFiles(first)
     await expect(page.locator('[data-testid="import-success"]')).toContainText('Imported "baseline-40 (2)"')

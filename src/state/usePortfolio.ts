@@ -1,31 +1,12 @@
 /** Portfolio state hook with localStorage persistence and engine integration. */
 
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { runEngine } from '../engine'
-import type { AllocationMatrix, Consumer, EngineResult, Generator } from '../engine/types'
+import type { EngineResult } from '../engine/types'
 import { createDemoPortfolio } from './demoPortfolio'
 import { loadPortfolio, savePortfolio } from './persistence'
 import { portfolioReducer } from './portfolioReducer'
-import type { PortfolioConsumer, PortfolioGenerator, PortfolioState } from './portfolioTypes'
-
-/** Scale a normalised shape to absolute MWh for a consumer. */
-function scaleConsumer(c: PortfolioConsumer): Consumer {
-  const total = c.shape.reduce((a, b) => a + b, 0)
-  const demandMWh = total > 0 ? c.shape.map((v) => (v / total) * c.annualMWh) : c.shape.map(() => 0)
-  return { id: c.uid, demandMWh }
-}
-
-/** Scale a normalised shape to absolute MWh for a generator. */
-function scaleGenerator(g: PortfolioGenerator): Generator {
-  const total = g.shape.reduce((a, b) => a + b, 0)
-  const generationMWh = total > 0 ? g.shape.map((v) => (v / total) * g.annualMWh) : g.shape.map(() => 0)
-  return { id: g.uid, generationMWh }
-}
-
-/** Convert the portfolio matrix to the engine's AllocationMatrix format. */
-function toEngineMatrix(matrix: PortfolioState['matrix']): AllocationMatrix {
-  return matrix
-}
+import type { PortfolioState } from './portfolioTypes'
+import { runPortfolioEngine } from './runPortfolioEngine'
 
 /** Empty state used while the demo portfolio loads asynchronously. */
 const EMPTY_STATE: PortfolioState = {
@@ -75,37 +56,18 @@ export function usePortfolio() {
   }, [state, loading])
 
   // Run the engine whenever inputs change
-  const engineResult: EngineResult | null = useMemo(() => {
-    if (state.consumers.length === 0 || state.generators.length === 0) return null
-
-    const isConsumptionShare = state.allocationMode === 'consumption-share'
-    const activeMatrix = isConsumptionShare ? state.consumptionMatrix : state.matrix
-
-    // Check if any generator has a non-zero allocation in the active matrix
-    const hasAllocation = state.generators.some((g) => {
-      const row = activeMatrix[g.uid]
-      return row && Object.values(row).some((v) => v > 0)
-    })
-    if (!hasAllocation) return null
-
-    const consumers = state.consumers.map(scaleConsumer)
-    const generators = state.generators.map(scaleGenerator)
-    return runEngine({
-      consumers,
-      generators,
-      matrix: toEngineMatrix(state.matrix),
-      granularity: state.granularity,
-      allocationMode: state.allocationMode,
-      consumptionMatrix: toEngineMatrix(state.consumptionMatrix),
-    })
-  }, [
-    state.consumers,
-    state.generators,
-    state.matrix,
-    state.granularity,
-    state.allocationMode,
-    state.consumptionMatrix,
-  ])
+  const engineResult: EngineResult | null = useMemo(
+    () => runPortfolioEngine(state),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only the inputs the engine reads
+    [
+      state.consumers,
+      state.generators,
+      state.matrix,
+      state.granularity,
+      state.allocationMode,
+      state.consumptionMatrix,
+    ],
+  )
 
   return { state, dispatch, engineResult, loading }
 }
