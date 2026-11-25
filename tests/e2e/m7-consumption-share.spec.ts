@@ -365,3 +365,55 @@ test.describe('M7: Set % of consumption allocation mode', () => {
     await expect(firstCell).toHaveValue('25')
   })
 })
+
+test.describe('Compare import of consumption-share scenarios', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => {
+      localStorage.clear()
+      localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())
+    })
+    await page.goto('/')
+  })
+
+  test('importing two downloaded files names them after the files, confirms each, and compares them', async ({
+    page,
+  }, testInfo) => {
+    await page.click('[data-tab="allocation"]')
+    await page.click('[data-testid="mode-consumption-share"]')
+    const cells = page.locator('[data-testid="matrix-cell"]')
+    await cells.nth(0).fill('40')
+    await cells.nth(1).fill('40')
+
+    await page.click('[data-tab="results"]')
+    const downloadPromise = page.waitForEvent('download')
+    await page.click('[data-testid="download-scenario-btn"]')
+    const download = await downloadPromise
+    const first = testInfo.outputPath('baseline-40.json')
+    await download.saveAs(first)
+    const second = testInfo.outputPath('variant-copy.json')
+    await (await import('node:fs/promises')).copyFile(first, second)
+
+    await page.click('[data-tab="compare"]')
+    await expect(page.locator('[data-testid="compare-guidance"]')).toBeVisible()
+
+    await page.locator('input[type="file"]').setInputFiles(first)
+    await expect(page.locator('[data-testid="import-success"]')).toContainText('Imported "baseline-40"')
+    await expect(page.locator('[data-testid="compare-picker"]')).toContainText('baseline-40')
+    await expect(page.locator('[data-testid="import-error"]')).toHaveCount(0)
+
+    await page.locator('input[type="file"]').setInputFiles(second)
+    await expect(page.locator('[data-testid="import-success"]')).toContainText('Imported "variant-copy"')
+
+    // Both imports are selected automatically, so the comparison renders without further clicks
+    await expect(page.locator('[data-testid="compare-guidance"]')).toHaveCount(0)
+    await expect(page.locator('.compare-picker__checkbox').nth(0)).toBeChecked()
+    await expect(page.locator('.compare-picker__checkbox').nth(1)).toBeChecked()
+    await expect(page.locator('[data-testid="download-comparison-pdf"]')).toBeVisible()
+    await expect(page.locator('[data-testid="compare-tab"]')).toContainText('Set % of consumption')
+
+    // Importing the same file again gets a distinct name
+    await page.locator('input[type="file"]').setInputFiles(first)
+    await expect(page.locator('[data-testid="import-success"]')).toContainText('Imported "baseline-40 (2)"')
+  })
+})

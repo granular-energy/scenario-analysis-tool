@@ -1396,6 +1396,13 @@
   margin: var(--ge-space-xs) 0 0 0;
 }
 
+.compare-import-success {
+  font-family: var(--ge-font-body);
+  font-size: 13px;
+  color: var(--ge-teal);
+  margin: var(--ge-space-xs) 0 0 0;
+}
+
 /* ---- Compare section title ---- */
 .compare-section-title {
   font-family: var(--ge-font-body);

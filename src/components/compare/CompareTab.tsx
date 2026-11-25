@@ -25,6 +25,21 @@ import { ConsumerScoreTable } from './ConsumerScoreTable'
 
 const MAX_COMPARE = 4
 
+/** The file name without its extension, falling back to the name stored in the file. */
+function scenarioNameFromFile(fileName: string, embeddedName: string): string {
+  const stem = fileName.replace(/\.json$/i, '').trim()
+  return stem.length > 0 ? stem : embeddedName
+}
+
+/** Append a counter when a scenario with the same name is already saved, so the picker stays unambiguous. */
+function uniqueName(name: string, existing: readonly SavedScenario[]): string {
+  const taken = new Set(existing.map((s) => s.name))
+  if (!taken.has(name)) return name
+  let n = 2
+  while (taken.has(`${name} (${n})`)) n++
+  return `${name} (${n})`
+}
+
 function scaleConsumer(c: PortfolioConsumer): Consumer {
   const total = c.shape.reduce((a, b) => a + b, 0)
   const demandMWh = total > 0 ? c.shape.map((v) => (v / total) * c.annualMWh) : c.shape.map(() => 0)
@@ -41,6 +56,7 @@ export function CompareTab() {
   const [scenarios, setScenarios] = useState<SavedScenario[]>(() => loadScenarios())
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [importError, setImportError] = useState<string | null>(null)
+  const [importSuccess, setImportSuccess] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -103,21 +119,26 @@ export function CompareTab() {
         const validation = validateScenarioFile(parsed)
         if (!validation.ok) {
           setImportError(validation.error)
+          setImportSuccess(null)
           return
         }
 
         const portfolioState = scenarioFileToPortfolioState(validation.file)
 
-        // Run engine to get results summary
         const consumers = portfolioState.consumers.map(scaleConsumer)
         const generators = portfolioState.generators.map(scaleGenerator)
+        const activeMatrix =
+          portfolioState.allocationMode === 'consumption-share'
+            ? portfolioState.consumptionMatrix
+            : portfolioState.matrix
         const hasAllocation = portfolioState.generators.some((g) => {
-          const row = portfolioState.matrix[g.uid]
+          const row = activeMatrix[g.uid]
           return row && Object.values(row).some((v) => v > 0)
         })
 
         if (!hasAllocation || consumers.length === 0 || generators.length === 0) {
           setImportError('The imported scenario has no valid allocations')
+          setImportSuccess(null)
           return
         }
 
@@ -126,23 +147,31 @@ export function CompareTab() {
           generators,
           matrix: portfolioState.matrix,
           granularity: portfolioState.granularity,
+          allocationMode: portfolioState.allocationMode,
+          consumptionMatrix: portfolioState.consumptionMatrix,
         })
+
+        // Exported files all carry a default name, so the file name is the one the user actually chose
+        const existing = loadScenarios()
+        const name = uniqueName(scenarioNameFromFile(file.name, validation.file.name), existing)
 
         const newScenario: SavedScenario = {
           id: generateId(),
-          name: validation.file.name,
+          name,
           savedAt: new Date().toISOString(),
           portfolio: portfolioState,
           results: createScenarioResultsSummary(engineResult),
         }
 
-        const existing = loadScenarios()
         existing.push(newScenario)
         saveScenarios(existing)
         setScenarios(loadScenarios())
+        setSelectedIds((prev) => (prev.length < MAX_COMPARE ? [...prev, newScenario.id] : prev))
         setImportError(null)
+        setImportSuccess(`Imported "${name}"`)
       } catch {
         setImportError('Could not parse the file as valid JSON')
+        setImportSuccess(null)
       }
     }
     reader.readAsText(file)
@@ -163,44 +192,22 @@ export function CompareTab() {
     void generateComparisonPdf(pdfScenarios)
   }, [selectedScenarios])
 
-  // Guidance state: fewer than 2 saved scenarios
-  if (scenarios.length < 2) {
-    return (
-      <div className="compare-tab" data-testid="compare-tab">
-        <div className="compare-guidance" data-testid="compare-guidance">
-          <p className="compare-guidance__text">
-            Save at least 2 scenarios from the Results tab to compare them here.
-          </p>
-          <button
-            className="btn-secondary compare-import-btn"
-            data-testid="import-scenario-btn"
-            onClick={handleImportClick}
-          >
-            Import scenario
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            aria-label="Import scenario JSON file"
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-          />
-          {importError && (
-            <p className="compare-import-error" data-testid="import-error">
-              {importError}
-            </p>
-          )}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="compare-tab" data-testid="compare-tab">
+      {scenarios.length < 2 && (
+        <div className="compare-guidance" data-testid="compare-guidance">
+          <p className="compare-guidance__text">
+            Save at least 2 scenarios from the Results tab, or import them as files, to compare them here.
+            {scenarios.length === 1 && ' One scenario is saved so far.'}
+          </p>
+        </div>
+      )}
+
       {/* Scenario picker */}
       <div className="compare-picker" data-testid="compare-picker">
-        <h3 className="compare-section-title">Select scenarios to compare (up to 4)</h3>
+        {scenarios.length >= 2 && (
+          <h3 className="compare-section-title">Select scenarios to compare (up to 4)</h3>
+        )}
         <div className="compare-picker__list">
           {scenarios.map((scenario) => (
             <div key={scenario.id} className="compare-picker__item">
@@ -269,6 +276,11 @@ export function CompareTab() {
             {importError}
           </p>
         )}
+        {importSuccess && (
+          <p className="compare-import-success" data-testid="import-success" role="status">
+            {importSuccess}
+          </p>
+        )}
       </div>
 
       {/* Comparison content (requires 2+ scenarios selected) */}
@@ -289,7 +301,7 @@ export function CompareTab() {
         </>
       )}
 
-      {selectedScenarios.length < 2 && (
+      {selectedScenarios.length < 2 && scenarios.length >= 2 && (
         <p className="compare-hint">Select at least 2 scenarios above to see the comparison.</p>
       )}
     </div>
