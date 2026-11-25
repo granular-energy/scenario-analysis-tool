@@ -20,10 +20,16 @@
 - Open decisions from the plan: repo name, HubSpot form IDs, Highcharts licence key, GitHub/Vercel access, who signs off engine parity.
 - Default sizes and capacity factors in `src/data/profiles/registry.json` are UK-typical guesses.
 
-## Launch state (2026-11-24)
+## Launch state (2026-11-25)
 
 - Milestones M2–M6 complete. M6 added the HubSpot sign-up gate (full-app gate on first visit).
 - **Hosting**: Vercel project `scenario-analysis-tool` under Toby's personal Vercel account (toblerone74), production URL https://scenario-analysis-tool.vercel.app. Deployed with `vercel --prod` from the working tree; the project is not yet linked to GitHub, so redeploys are manual until it is. Transfer to a Granular Vercel team and add the `scenarios.granular-energy.com` CNAME when marketing/IT are ready.
 - **GitHub**: `granular-energy/scenario-analysis-tool` holds the old v1/v2 tool on `main`/`v2`. v3 is pushed to branch `v3`; switching `main` to v3 is a deliberate step for Toby.
 - **HubSpot**: EU portal 25772642, form "Scenario Analysis Tool sign-up" (`8aa9943b-d138-4200-bc7e-d61b3465a59b`). Forms from the current HubSpot editor only render through the per-portal embed script (`forms/embed/<portal>.js` + `.hs-form-frame`), not `v2.js`; submission arrives as a `hsFormCallback` postMessage. Open items from HubSpot's review: no reCAPTCHA, no GDPR consent field.
 - Playwright builds with `VITE_HUBSPOT_FORM_ID=REPLACE_WITH_FORM_ID` so the dev-mode gate tests still run; production uses the real ID by default.
+
+### Update 2026-11-25
+
+- M7 ("Set % of consumption" allocation mode) shipped: toggle on the Allocation tab, consumption matrix persisted and saved in scenario files, per-consumer total % allocated, mode shown in Results, Compare and PDFs. In this mode the engine treats the assigned volume (pct × consumer demand) as the generator's generation; surplus only arises when hourly matching clips the shape.
+- The M7 harness generator finished but its process hung (API idle timeout); the milestone was verified manually: typecheck, lint, 156 unit tests, 112 Playwright tests.
+- Custom domain: https://scenarios.granular-energy.com now points at the `scenario-analysis-tool` project (detached from the old `claude-harness` project via the project-domains API). DNS was already on Vercel, so no record changes were made.
