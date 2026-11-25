@@ -96,6 +96,7 @@ export function runEngine(input: EngineInput): EngineResult {
   const isConsumptionShare = mode === 'consumption-share'
 
   const allocatedByGenerator = new Map<string, Record<string, number>>(generators.map((g) => [g.id, {}]))
+  const suppliedByGenerator = new Map<string, number>(generators.map((g) => [g.id, 0]))
   const portfolioDemand = new Array<number>(HOURS_PER_YEAR).fill(0)
   const portfolioAllocated = new Array<number>(HOURS_PER_YEAR).fill(0)
   let portfolioSupplied = 0
@@ -114,6 +115,9 @@ export function runEngine(input: EngineInput): EngineResult {
     allocations.forEach((a) => addInto(allocated, a))
     const supplied = supplies.reduce((total, s) => total + sum(s.supplyMWh), 0)
     portfolioSupplied += supplied
+    supplies.forEach((s) =>
+      suppliedByGenerator.set(s.generatorId, suppliedByGenerator.get(s.generatorId)! + sum(s.supplyMWh)),
+    )
     const summary = summarise(consumer.demandMWh, allocated, supplied)
 
     const contributions: GeneratorContribution[] = supplies.map((s, i) => {
@@ -142,19 +146,10 @@ export function runEngine(input: EngineInput): EngineResult {
     const byConsumer = allocatedByGenerator.get(g.id)!
     const allocatedTotal = Object.values(byConsumer).reduce((a, b) => a + b, 0)
 
-    if (isConsumptionShare) {
-      // In consumption-share mode the generator's library size is irrelevant.
-      // Report assigned total as generation, with zero surplus.
-      return {
-        generatorId: g.id,
-        totalGenerationMWh: allocatedTotal,
-        allocatedMWh: allocatedTotal,
-        unallocatedMWh: 0,
-        allocatedByConsumer: byConsumer,
-      }
-    }
-
-    const generationTotal = sum(g.generationMWh)
+    // In consumption-share mode the generator's library size is irrelevant: the volume assigned
+    // through the matrix (pct × consumer demand) plays the role of its generation, so any
+    // surplus is purely what the matching window clipped off, as in generator-share mode.
+    const generationTotal = isConsumptionShare ? suppliedByGenerator.get(g.id)! : sum(g.generationMWh)
     return {
       generatorId: g.id,
       totalGenerationMWh: generationTotal,

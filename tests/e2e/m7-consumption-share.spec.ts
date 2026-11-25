@@ -196,7 +196,7 @@ test.describe('M7: Set % of consumption allocation mode', () => {
     await expect(granularity).toContainText(/consumption/i)
   })
 
-  test('M7.16 Sankey has no Surplus node in consumption-share mode', async ({ page }) => {
+  test('M7.16 Sankey shows no Surplus node unless the matching window clips the shape', async ({ page }) => {
     await page.click('[data-tab="allocation"]')
     await page.click('[data-testid="mode-consumption-share"]')
 
@@ -204,21 +204,27 @@ test.describe('M7: Set % of consumption allocation mode', () => {
     await cells.nth(0).fill('50')
     await cells.nth(1).fill('50')
 
+    // Annual matching never clips, and generator size is ignored in this mode, so nothing is surplus
+    await page.locator('.granularity-selector__radio[value="annual"]').check()
     await page.click('[data-tab="results"]')
 
-    // Wait for the sankey chart to render
     const sankeyContainer = page.locator('[data-testid="chart-sankey"]')
     await expect(sankeyContainer).toBeVisible()
-
-    // Check that no visible Sankey data-label contains "Surplus"
-    // Use the Highcharts data-label spans rather than raw textContent
-    // (which includes injected <style> blocks from Highcharts)
     const dataLabels = sankeyContainer.locator('.highcharts-data-label text, .highcharts-label text')
     const count = await dataLabels.count()
     for (let i = 0; i < count; i++) {
-      const text = await dataLabels.nth(i).textContent()
-      expect(text).not.toMatch(/Surplus/)
+      expect(await dataLabels.nth(i).textContent()).not.toMatch(/Surplus/)
     }
+
+    // Hourly matching clips the assigned shape against demand; the clipped part is surplus
+    await page.click('[data-tab="allocation"]')
+    await page.locator('.granularity-selector__radio[value="hourly"]').check()
+    await page.click('[data-tab="results"]')
+    await expect(
+      sankeyContainer
+        .locator('.highcharts-data-label text, .highcharts-label text', { hasText: /Surplus/ })
+        .first(),
+    ).toBeVisible()
   })
 
   test('M7.17 Scenario JSON export includes allocationMode and consumptionMatrix', async ({ page }) => {

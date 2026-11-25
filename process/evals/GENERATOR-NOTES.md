@@ -8,7 +8,7 @@ All 25 M7 criteria addressed. Summary of changes:
 
 1. **`src/engine/types.ts`** — Added `AllocationMode` type (`'generator-share' | 'consumption-share'`) and optional `allocationMode` / `consumptionMatrix` fields on `EngineInput`.
 
-2. **`src/engine/score.ts`** — Added `buildConsumptionShareSupplies()` function. In consumption-share mode, each pair's supply = generator normalised shape × (pct/100 × consumer demand total). Generator utilisation sets `unallocatedMWh: 0` and `totalGenerationMWh` to the assigned total.
+2. **`src/engine/score.ts`** — Added `buildConsumptionShareSupplies()` function. In consumption-share mode, each pair's supply = generator normalised shape × (pct/100 × consumer demand total). Generator utilisation reports the assigned volume as `totalGenerationMWh`; `unallocatedMWh` is only what the matching window clips (zero unless hourly matching clips the shape).
 
 ### State (M7.1, M7.2, M7.10)
 
@@ -44,7 +44,7 @@ All 25 M7 criteria addressed. Summary of changes:
 
 ### Tests
 
-16. **`src/engine/__tests__/engine.test.ts`** — Two new tests: consumption-share 15% of 50k MWh = 7,500 MWh solar shape; generator utilisation reports zero unallocatedMWh.
+16. **`src/engine/__tests__/engine.test.ts`** — Two new tests: consumption-share 15% of 50k MWh = 7,500 MWh solar shape; generator utilisation reports the assigned volume as generation, with surplus only from clipping.
 
 17. **`src/io/__tests__/scenarioIO.test.ts`** — Backward-compatible import test (pre-M7 file defaults to generator-share).
 
@@ -69,7 +69,7 @@ Nothing — all 25 criteria addressed.
 - **Testing the toggle**: Navigate to Allocation tab → click "Set % of consumption" → cells now edit the consumption matrix. Enter 15 in a cell for the demo's Data centre (50,000 MWh) to see the 7,500 MWh annotation.
 - **Allocate evenly**: In consumption-share with the demo portfolio (1 consumer, 2 generators), both cells become 50%.
 - **Over-allocation warning**: Set both generators to 60% each — the consumer column total shows 120% with amber styling and a tooltip about excess energy.
-- **Sankey**: In consumption-share mode, generator utilisation reports 0 unallocated MWh, so no "Surplus" nodes appear.
+- **Sankey**: In consumption-share mode a "Surplus" node appears only when hourly matching clips the assigned shape, so the diagram always adds up to the assigned total shown in the score strip.
 - **Backward compatibility**: Importing a pre-M7 scenario JSON (no `allocationMode` field) loads as generator-share with an empty consumption matrix. All golden fixture tests pass unchanged.
 - **Sign-up flag**: E2e tests set `localStorage.setItem('scenario-tool.signedUp', new Date().toISOString())` after `localStorage.clear()`.
 - **Mobile**: The allocation-mode toggle wraps to a column layout at narrow widths (375px tested) with no horizontal overflow.

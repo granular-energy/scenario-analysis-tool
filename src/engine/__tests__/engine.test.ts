@@ -199,26 +199,28 @@ describe('runEngine', () => {
     expect(gen.allocatedMWh[0]).toBe(0)
   })
 
-  it('consumption-share: generator utilisation reports zero unallocatedMWh', () => {
+  it('consumption-share: generator utilisation reports the assigned volume as generation', () => {
     const flatDemand = flat(50_000 / HOURS_PER_YEAR)
     const solarShape = daytime(1)
-
-    const result = runEngine({
+    const input = {
       consumers: [{ id: 'c', demandMWh: flatDemand }],
       generators: [{ id: 'solar', generationMWh: solarShape }],
       matrix: {},
-      granularity: 'hourly',
-      allocationMode: 'consumption-share',
+      allocationMode: 'consumption-share' as const,
       consumptionMatrix: { solar: { c: 15 } },
-    })
-
-    // Every generator should have unallocatedMWh = 0
-    for (const g of result.generators) {
-      expect(g.unallocatedMWh).toBe(0)
     }
-    // totalGenerationMWh should equal allocatedMWh
-    const gen = result.generators[0]
-    expect(gen.totalGenerationMWh).toBeCloseTo(gen.allocatedMWh, 1)
+
+    // Without clipping, everything assigned is allocated and nothing is surplus
+    const asProduced = runEngine({ ...input, granularity: 'as-produced' }).generators[0]
+    expect(asProduced.totalGenerationMWh).toBeCloseTo(7500, 6)
+    expect(asProduced.allocatedMWh).toBeCloseTo(7500, 6)
+    expect(asProduced.unallocatedMWh).toBeCloseTo(0, 6)
+
+    // Hourly matching clips the solar shape against flat demand; the clipped part is surplus
+    const hourly = runEngine({ ...input, granularity: 'hourly' }).generators[0]
+    expect(hourly.totalGenerationMWh).toBeCloseTo(7500, 6)
+    expect(hourly.allocatedMWh).toBeLessThan(7500)
+    expect(hourly.unallocatedMWh).toBeCloseTo(7500 - hourly.allocatedMWh, 6)
   })
 
   it('runs a 5×5 hourly portfolio quickly', () => {

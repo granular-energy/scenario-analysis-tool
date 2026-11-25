@@ -54,8 +54,8 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
   })
 
   test('M3b.4 Old schema with capacityMW migrates correctly', async ({ page }) => {
-    // Set old-schema portfolio in localStorage
-    await page.evaluate(() => {
+    // Inject before the app boots: once mounted, the app persists its own state and would overwrite this
+    await page.addInitScript(() => {
       const oldPortfolio = {
         consumers: [
           {
@@ -82,9 +82,10 @@ test.describe('M3b: Portfolio, Allocation and Results enhancements', () => {
         matrix: { g1: { c1: 100 } },
         granularity: 'hourly',
       }
-      localStorage.setItem('sat-v3-portfolio', JSON.stringify(oldPortfolio))
+      if (!localStorage.getItem('sat-v3-portfolio'))
+        localStorage.setItem('sat-v3-portfolio', JSON.stringify(oldPortfolio))
     })
-
+    await page.evaluate(() => localStorage.removeItem('sat-v3-portfolio'))
     await page.reload()
 
     // Generator should show migrated annualMWh = 25 * 0.11 * 8760 = 24090
