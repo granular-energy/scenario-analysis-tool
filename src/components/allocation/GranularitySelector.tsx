@@ -17,43 +17,81 @@ function ShapePreservedTip() {
   )
 }
 
+interface MethodFact {
+  readonly label: string
+  readonly parts: readonly (string | 'SHAPE_TIP')[]
+}
+
 const OPTIONS: {
   value: MatchingGranularity
   label: string
-  descriptionParts: (string | 'SHAPE_TIP')[]
+  facts: readonly MethodFact[]
 }[] = [
   {
     value: 'as-produced',
     label: 'As produced (no cap)',
-    descriptionParts: [
-      'No cap. The consumer takes everything the matrix offers, hour by hour, in the generator’s own hourly profile (',
-      'SHAPE_TIP',
-      '). Hours where the offer exceeds consumption show as excess; nothing is held back as surplus. This is what a pay-as-produced PPA delivers.',
+    facts: [
+      { label: 'Cap', parts: ['None. The consumer takes everything the matrix offers, hour by hour.'] },
+      {
+        label: 'Profile',
+        parts: ['Preserved (', 'SHAPE_TIP', '): the offer is taken exactly as generated.'],
+      },
+      {
+        label: 'Outcome',
+        parts: ['Hours where the offer exceeds consumption show as excess; nothing is held back as surplus.'],
+      },
+      { label: 'Like', parts: ['A pay-as-produced PPA.'] },
     ],
   },
   {
     value: 'annual',
     label: 'Annual matching target',
-    descriptionParts: [
-      'Capped over the year. The consumer takes the offer up to 100 % of its annual consumption, as with annual certificates (GoOs, REGOs). The whole year’s offer is scaled by a single factor, so the generator’s hourly profile is unchanged (',
-      'SHAPE_TIP',
-      '): some hours are still over-supplied (excess) and others short (unmatched). Anything offered beyond annual consumption is surplus.',
+    facts: [
+      { label: 'Cap', parts: ['The year. Allocation is limited to 100 % of annual consumption.'] },
+      {
+        label: 'Profile',
+        parts: ['Preserved (', 'SHAPE_TIP', '): the whole year’s offer is scaled by a single factor.'],
+      },
+      {
+        label: 'Outcome',
+        parts: [
+          'Some hours are over-supplied (excess) and others short (unmatched). Anything offered beyond annual consumption is surplus.',
+        ],
+      },
+      { label: 'Like', parts: ['Annual certificates (GoOs, REGOs).'] },
     ],
   },
   {
     value: 'monthly',
     label: 'Monthly matching target',
-    descriptionParts: [
-      'Capped month by month. Allocation in each month is limited to that month’s consumption. The offer is scaled within each month, so the profile is unchanged inside the month (',
-      'SHAPE_TIP',
-      '). Surplus from one month cannot be carried into another.',
+    facts: [
+      { label: 'Cap', parts: ['Each month. Allocation is limited to that month’s consumption.'] },
+      {
+        label: 'Profile',
+        parts: ['Preserved (', 'SHAPE_TIP', '): each month’s offer is scaled by its own factor.'],
+      },
+      {
+        label: 'Outcome',
+        parts: [
+          'Excess and unmatched hours within each month. Anything offered beyond a month’s consumption is surplus and cannot be carried into another month.',
+        ],
+      },
+      { label: 'Like', parts: ['Monthly matching targets.'] },
     ],
   },
   {
     value: 'hourly',
     label: 'Hourly matching only',
-    descriptionParts: [
-      'Capped hour by hour. Allocation in each hour is limited to that hour’s consumption, so there is never any excess. This is the only method that does not preserve the generator’s profile: output above demand in an hour is clipped rather than preserved and left as surplus. This is 24/7 hourly matching, the strictest standard.',
+    facts: [
+      { label: 'Cap', parts: ['Each hour. Allocation is limited to that hour’s consumption.'] },
+      {
+        label: 'Profile',
+        parts: [
+          'Not preserved. This is the only method that does not respect shape preservation: output above demand in an hour is clipped rather than preserved.',
+        ],
+      },
+      { label: 'Outcome', parts: ['Never any excess. Everything clipped is surplus.'] },
+      { label: 'Like', parts: ['24/7 hourly matching.'] },
     ],
   },
 ]
@@ -88,11 +126,18 @@ export function GranularitySelector() {
             />
             <div className="granularity-selector__text">
               <span className="granularity-selector__label">{opt.label}</span>
-              <span className="granularity-selector__desc">
-                {opt.descriptionParts.map((part, i) =>
-                  part === 'SHAPE_TIP' ? <ShapePreservedTip key={i} /> : <span key={i}>{part}</span>,
-                )}
-              </span>
+              <dl className="granularity-selector__desc granularity-selector__facts">
+                {opt.facts.map((fact) => (
+                  <div key={fact.label} className="granularity-selector__fact">
+                    <dt>{fact.label}</dt>
+                    <dd>
+                      {fact.parts.map((part, i) =>
+                        part === 'SHAPE_TIP' ? <ShapePreservedTip key={i} /> : <span key={i}>{part}</span>,
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           </label>
         ))}

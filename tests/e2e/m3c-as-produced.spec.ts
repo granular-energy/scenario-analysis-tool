@@ -31,7 +31,7 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await expect(label).toHaveText('As produced (no cap)')
 
     const desc = fourthOption.locator('.granularity-selector__desc')
-    await expect(desc).toContainText('No cap. The consumer takes everything the matrix offers, hour by hour')
+    await expect(desc).toContainText('None. The consumer takes everything the matrix offers, hour by hour')
     await expect(desc).toContainText('pay-as-produced PPA')
     await expect(desc).toContainText('Hours where the offer exceeds consumption show as excess')
   })
@@ -40,18 +40,25 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await page.click('[data-tab="allocation"]')
     const options = page.locator('.granularity-selector__option')
 
-    // Order runs least to most strict: as-produced, annual, monthly, hourly
+    // Order runs from the widest cap window to the narrowest: as-produced, annual, monthly, hourly
+    const labels = ['Cap', 'Profile', 'Outcome', 'Like']
+    for (let i = 0; i < 4; i++) {
+      const terms = options.nth(i).locator('.granularity-selector__fact dt')
+      await expect(terms).toHaveText(labels)
+    }
+
     const annualDesc = options.nth(1).locator('.granularity-selector__desc')
     await expect(annualDesc).toContainText('annual consumption')
-    await expect(annualDesc).toContainText('shape')
+    await expect(annualDesc).toContainText('Preserved')
 
     const monthlyDesc = options.nth(2).locator('.granularity-selector__desc')
     await expect(monthlyDesc).toContainText('limited to that month\u2019s consumption')
-    await expect(monthlyDesc).toContainText('shape')
+    await expect(monthlyDesc).toContainText('Preserved')
 
     const hourlyDesc = options.nth(3).locator('.granularity-selector__desc')
     await expect(hourlyDesc).toContainText('limited to that hour\u2019s consumption')
-    await expect(hourlyDesc).toContainText('clipped rather than preserved')
+    await expect(hourlyDesc).toContainText('does not respect shape preservation')
+    await expect(hourlyDesc).not.toContainText('strict')
   })
 
   test('M3c.9 Selecting as-produced dispatches and re-runs the engine', async ({ page }) => {
