@@ -26,34 +26,34 @@ const OPTIONS: {
     value: 'as-produced',
     label: 'As produced (no cap)',
     descriptionParts: [
-      'The consumer receives its full share of each generator\u2019s output in every hour, with nothing held back. Generator shape fully preserved (',
+      'No cap. The consumer takes everything the matrix offers, hour by hour, in the generator’s own hourly profile (',
       'SHAPE_TIP',
-      '). Excess appears wherever generation exceeds consumption in the hour; nothing is left as surplus. This is what a pay-as-produced PPA delivers.',
+      '). Hours where the offer exceeds consumption show as excess; nothing is held back as surplus. This is what a pay-as-produced PPA delivers.',
     ],
   },
   {
     value: 'annual',
     label: 'Annual matching target',
     descriptionParts: [
-      'Allocates up to 100 % of each consumer\u2019s annual consumption, as with annual certificates (GoOs, REGOs). The generator\u2019s hourly shape is kept (',
+      'Capped over the year. The consumer takes the offer up to 100 % of its annual consumption, as with annual certificates (GoOs, REGOs). The whole year’s offer is scaled by a single factor, so the generator’s hourly profile is unchanged (',
       'SHAPE_TIP',
-      '), so some hours are over-supplied (excess) and others short (unmatched). Generation beyond annual consumption is left as surplus.',
+      '): some hours are still over-supplied (excess) and others short (unmatched). Anything offered beyond annual consumption is surplus.',
     ],
   },
   {
     value: 'monthly',
     label: 'Monthly matching target',
     descriptionParts: [
-      'As annual, but the cap applies month by month: allocation in each month is limited to that month\u2019s consumption, keeping the generator\u2019s shape within the month (',
+      'Capped month by month. Allocation in each month is limited to that month’s consumption. The offer is scaled within each month, so the profile is unchanged inside the month (',
       'SHAPE_TIP',
-      '). Generation beyond a month\u2019s consumption is surplus and cannot be carried into another month.',
+      '). Surplus from one month cannot be carried into another.',
     ],
   },
   {
     value: 'hourly',
     label: 'Hourly matching only',
     descriptionParts: [
-      'Allocation in each hour is limited to that hour\u2019s consumption, so there is never any excess. The generator\u2019s shape is clipped rather than preserved: output above demand in an hour is left as surplus. This is 24/7 hourly matching, the strictest standard.',
+      'Capped hour by hour. Allocation in each hour is limited to that hour’s consumption, so there is never any excess. This is the only method that does not preserve the generator’s profile: output above demand in an hour is clipped rather than preserved and left as surplus. This is 24/7 hourly matching, the strictest standard.',
     ],
   },
 ]
@@ -65,8 +65,10 @@ export function GranularitySelector() {
     <fieldset className="granularity-selector" data-testid="granularity-selector">
       <legend className="granularity-selector__legend">Allocation method</legend>
       <p className="granularity-selector__intro">
-        Choose how generation is allocated to each consumer. These are four simple allocation methods, listed
-        from least to most strict. Many other methods exist and are available in the Granular Energy platform.
+        The allocation matrix above decides how much of each generator’s output is offered to each consumer.
+        The allocation method decides how much of that offer the consumer actually takes, by capping it
+        against the consumer’s consumption over a time window. These four simple methods are listed from least
+        to most strict; many other methods exist and are available in the Granular Energy platform.
       </p>
       <div className="granularity-selector__options">
         {OPTIONS.map((opt) => (
@@ -96,13 +98,31 @@ export function GranularitySelector() {
         ))}
       </div>
       <div className="granularity-selector__note" data-testid="how-allocation-works">
-        <strong>How allocation works</strong>
+        <strong>How the matrix and the method work together</strong>
         <p>
-          A generator's output is never moved into the hours that happen to need it. The methods differ in the
-          window within which allocation is capped at consumption: not at all, the whole year, every month, or
-          every hour. With no cap, an annual cap or a monthly cap the generator's hourly shape is preserved,
-          so over-supplied hours show as excess. Hourly matching is the one method that clips the shape:
-          nothing above an hour's demand is allocated, so there is no excess, only surplus.
+          <b>Two steps.</b> The matrix sets the offer. With “Share of generator output” a cell is the share of
+          a generator’s annual output offered to a consumer; with “Set % of consumption” a cell is the
+          percentage of the consumer’s annual demand offered in that generator’s hourly profile. Either way
+          the offer follows the generator’s profile hour by hour. The method then decides how much of the
+          offer is taken.
+        </p>
+        <p>
+          <b>The matrix is a ceiling; the method only cuts.</b> A consumer never receives more than the matrix
+          offers. If the offer is below the method’s cap, the method changes nothing, except hourly matching,
+          which still trims individual hours. If the offer is above the cap, the method cuts it back and the
+          remainder is surplus.
+        </p>
+        <p>
+          <b>Profile preserved or not.</b> As produced, annual and monthly scale a whole window’s offer by one
+          factor, so the generator’s hourly profile is unchanged: it still over-supplies some hours (excess)
+          and under-supplies others (unmatched). Hourly matching trims each hour separately, changing the
+          profile, and is the only method with no excess.
+        </p>
+        <p>
+          <b>Example.</b> Offer a consumer 60 % of its annual demand as solar and 60 % as wind, 120 % in
+          total. As produced allocates all 120 %, with large excess. Annual target cuts it to 100 %, leaving
+          20 % surplus, profile preserved. Monthly target cuts each month to that month’s consumption. Hourly
+          matching keeps only the generation that falls inside each hour’s demand, typically well under 100 %.
         </p>
       </div>
     </fieldset>

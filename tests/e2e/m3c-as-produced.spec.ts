@@ -15,9 +15,9 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await page.click('[data-tab="allocation"]')
     const note = page.locator('[data-testid="how-allocation-works"]')
     await expect(note).toBeVisible()
-    await expect(note).toContainText('never moved into the hours that happen to need it')
-    await expect(note).toContainText('not at all, the whole year, every month, or every hour')
-    await expect(note).toContainText('Hourly matching is the one method that clips the shape')
+    await expect(note).toContainText('The matrix is a ceiling; the method only cuts')
+    await expect(note).toContainText('As produced, annual and monthly scale a whole window')
+    await expect(note).toContainText('is the only method with no excess')
   })
 
   test('M3c.7 First radio option is "As produced (no cap)" with correct description', async ({ page }) => {
@@ -31,11 +31,9 @@ test.describe('M3c: As-produced method and shape-preservation', () => {
     await expect(label).toHaveText('As produced (no cap)')
 
     const desc = fourthOption.locator('.granularity-selector__desc')
-    await expect(desc).toContainText(
-      'The consumer receives its full share of each generator\u2019s output in every hour, with nothing held back',
-    )
+    await expect(desc).toContainText('No cap. The consumer takes everything the matrix offers, hour by hour')
     await expect(desc).toContainText('pay-as-produced PPA')
-    await expect(desc).toContainText('Excess appears wherever generation exceeds consumption in the hour')
+    await expect(desc).toContainText('Hours where the offer exceeds consumption show as excess')
   })
 
   test('M3c.8 Existing options describe cap window and shape rule', async ({ page }) => {

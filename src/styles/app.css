@@ -800,8 +800,18 @@
 }
 
 .granularity-selector__note p {
-  margin: 0;
+  margin: 0 0 var(--ge-space-xs) 0;
   font-size: 13px;
+  line-height: 1.5;
+}
+
+.granularity-selector__note p:last-child {
+  margin-bottom: 0;
+}
+
+.granularity-selector__note b {
+  font-weight: 600;
+  color: var(--ge-text-heading);
 }
 
 .granularity-selector__shape-tip,
