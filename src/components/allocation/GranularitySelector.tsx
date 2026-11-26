@@ -105,8 +105,9 @@ export function GranularitySelector() {
       <p className="granularity-selector__intro">
         The allocation matrix above decides how much of each generator’s output is offered to each consumer.
         The allocation method decides how much of that offer the consumer actually takes, by capping it
-        against the consumer’s consumption over a time window. These four simple methods are listed from least
-        to most strict; many other methods exist and are available in the Granular Energy platform.
+        against the consumer’s consumption over a time window. These four simple methods are listed from the
+        widest cap window to the narrowest; many other methods exist and are available in the Granular Energy
+        platform.
       </p>
       <div className="granularity-selector__options">
         {OPTIONS.map((opt) => (
